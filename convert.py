@@ -13,27 +13,11 @@ def remakeFile(inFile, outFile):
 
     with open(inFile, 'rb') as binary_data:
         repaired = fix_mojibake_escapes(binary_data.read())
-        # repaired =
 
     data = json.loads(repaired.decode('utf8'))
 
-    # with open(outFile, 'wb') as fixed_binary:
     with open(outFile, "w") as f:
         json.dump(data, f, ensure_ascii=False)
-
-
-def remakeByHand(inFile, outFile):
-    with open(inFile, 'r') as f:
-        data = f.read().encode('latin_1').decode('utf-8')
-
-    print(data.encode('latin1').decode('utf8'))
-
-    with open(outFile, 'w') as f:
-        f.write(data)
-
-    # import json
-    # data = r'"Rados\u00c5\u0082aw"'
-    # json.loads(data).encode('latin1').decode('utf8')
 
 
 def fixFiles(dir):
@@ -44,14 +28,8 @@ def fixFiles(dir):
                 outName = "fixed_"+file
                 outFile = os.path.join(root, outName)
                 remakeFile(inFile, outFile)
-                # remakeByHand(inFile, outFile)
 
 
 if __name__ == "__main__":
     fixFiles(DATA_DIR)
     print("Done")
-
-# data = r'"Rados\u00c5\u0082aw"'
-
-# data = r'"Kasia Wro\u00c5\u0084ska"'
-# json.loads(data).encode('latin_1').decode('utf-8')
