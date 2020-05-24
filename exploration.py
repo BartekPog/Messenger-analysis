@@ -1,80 +1,94 @@
-import json
-import os
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
+from datetime import date
 
-DATA_DIR = 'inbox/'
+sns.set()
+
+# DATA_DIR = 'inbox/'
+MESSAGES_FILE = "all_messages.csv"
+TIMEZONE = "Europe/Warsaw"
 USER = "Bartek Pogod"
 
+# Reading data
+data = pd.read_csv(MESSAGES_FILE)
 
-def getFileDirs(rootDir: str) -> list:
-    fileDirs = []
-    for root, dirs, files in os.walk(DATA_DIR):
-        for file in files:
-            if (file.endswith(".json") and file.startswith("fixed_")):
-                fileDirs.append(os.path.join(root, file))
-    return fileDirs
+data["date"] = pd.to_datetime(data["timestamp_ms"]*int(
+    1e6)).dt.tz_localize('UTC').dt.tz_convert(TIMEZONE).dt.strftime('%Y-%m-%d')
 
+data["weekday"] = pd.to_datetime(data["timestamp_ms"]*int(
+    1e6)).dt.tz_localize('UTC').dt.tz_convert(TIMEZONE).dt.strftime('%A')
 
-fileDirs = getFileDirs(DATA_DIR)
+data["yearday"] = pd.to_datetime(data["timestamp_ms"]*int(
+    1e6)).dt.tz_localize('UTC').dt.tz_convert(TIMEZONE).dt.strftime('%j')
 
+data["hour"] = pd.to_datetime(data["timestamp_ms"]*int(
+    1e6)).dt.tz_localize('UTC').dt.tz_convert(TIMEZONE).dt.strftime('%H')
 
-def readOne(fileName: str):
-    with open(fileName, "r") as f:
-        conversation = json.load(f)
-
-    participants = list(conversation["participants"])
-
-    coParticipantsList = [x["name"] for x in participants if x["name"] != USER]
-
-    coParticipant = coParticipantsList[0] if len(
-        coParticipantsList) == 1 else "GROUP"
-
-    messages = pd.DataFrame(conversation["messages"])
-    messages["chat_with"] = coParticipant
-
-    return messages
+data["minute"] = pd.to_datetime(data["timestamp_ms"]*int(
+    1e6)).dt.tz_localize('UTC').dt.tz_convert(TIMEZONE).dt.strftime('%M')
 
 
-def getAllConversations(root: str):
-    fileDirs = getFileDirs(root)
-    allConversations = pd.concat([readOne(f)for f in fileDirs])
+def messagesInAChatBarPlot(data: pd.DataFrame, chats: int):
+    noGroup = data[data["chat_with"] != "GROUP"]
+    plotDataSeries = noGroup["chat_with"].value_counts()[:chats]
 
-    return allConversations
-
-
-data = getAllConversations(DATA_DIR)
-
-# All activity over time
-sns.kdeplot(data['timestamp_ms'], shade=True)
-plt.show()
-
-# my activity over time vs others
-withoutUser = data[~data['sender_name'].isin([USER])]
-withUser = data[data['sender_name'].isin([USER])]
-ax = sns.kdeplot(withoutUser['timestamp_ms'], legend=False, shade=True)
-ax = sns.kdeplot(withUser['timestamp_ms'], legend=False, shade=True, ax=ax)
-ax.set(xlabel="Time (timestamps)", ylabel="messages frequency")
-# change legend texts
-
-# leg.set_title(new_title)
-# new_labels = ['label 1', 'label 2']
-# for t, l in zip(leg.texts, new_labels): t.set_text(l)
-
-# sns.plt.show()
-plt.show()
+    plotData = pd.DataFrame(plotDataSeries)
+    plotData["person"] = plotData.index
+    plotData["messages_number"] = plotData["chat_with"]
+    ax = sns.barplot(x=plotData["messages_number"],
+                     y=plotData["person"], orient="h")
+    ax.grid(True)
+    # ax.right_ax(False)
+    ax.set_title("{} {}'s chats with the most messages".format(chats, USER))
+    ax.set_ylabel('Chat participant')
+    ax.set_xlabel('Total number of messages')
+    plt.show()
 
 
-data.head()
-# plot values in time
+messagesInAChatBarPlot(data, chats=15)
 
+
+# overal activity over time
+def plotActivityOverTime(data: pd.DataFrame):
+    noGroup = data[data["chat_with"] != "GROUP"]
+
+    sentByUser = noGroup[noGroup["sender_name"] == USER]
+    userPlot = sentByUser.groupby(["date"]).agg(['count'])
+    userPlot["messages_per_day"] = userPlot[userPlot.columns[0]]
+    userPlot["date"] = userPlot.index
+    userPlot["date_ordinal"] = pd.to_datetime(
+        userPlot['date']).apply(lambda date: date.toordinal())
+
+    sentToUser = noGroup[noGroup["sender_name"] != USER]
+    toUserPlot = sentToUser.groupby(["date"]).agg(['count'])
+    toUserPlot["messages_per_day"] = toUserPlot[toUserPlot.columns[0]]
+    toUserPlot["date"] = toUserPlot.index
+    toUserPlot["date_ordinal"] = pd.to_datetime(
+        toUserPlot['date']).apply(lambda date: date.toordinal())
+
+    ax = sns.regplot(data=userPlot, x="date_ordinal", y="messages_per_day",
+                     order=3, scatter=False, scatter_kws={"alpha": 0.03}, label="Sent by user", color="green")
+    ax = sns.regplot(data=toUserPlot, x="date_ordinal", y="messages_per_day",
+                     order=3, scatter=False, scatter_kws={"alpha": 0.03}, label="Sent to user", color="red")
+
+    # ax.set_xlim(userPlot['date_ordinal'].min() - 1, userPlot['date_ordinal'].max() + 1)
+    # ax.set_ylim(0, userPlot['messages_per_day'].max() + 1)
+    ax.grid(True)
+    ax.yaxis.set_major_locator(MultipleLocator(10))
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Average messages per day')
+    new_labels = [date.fromordinal(int(item)) for item in ax.get_xticks()]
+    ax.set_xticklabels(new_labels, rotation=90)
+
+    ax.set_title("Average activity over time")
+
+    plt.legend(labels=['Sent by {}'.format(USER), 'Sent to {}'.format(USER)])
+    plt.show()
+
+
+plotActivityOverTime(data)
 
 # TODO
-# withoutUser = data[~data['sender_name'].isin([USER])]
-
-# g = sns.FacetGrid(withoutUser, col="sender_name", col_wrap=5,
-#                   margin_titles=True, height=2.5)
-# g.map(sns.kdeplot, shade=True)
-# # g.map(sns.regplot, "timestamp_ms", "score", order=1, color="green")
-# plt.show()
+# Keywords per chat

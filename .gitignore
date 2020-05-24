@@ -1,3 +1,4 @@
 .env/
 inbox/
 .vscode/
+all_messages.csv
