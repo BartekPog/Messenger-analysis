@@ -80,7 +80,7 @@ def plotActivityOverTime(data: pd.DataFrame):
     ax.set_xlabel('Date')
     ax.set_ylabel('Average messages per day')
     new_labels = [date.fromordinal(int(item)) for item in ax.get_xticks()]
-    ax.set_xticklabels(new_labels, rotation=90)
+    ax.set_xticklabels(new_labels, horizontalalignment='right',  rotation=45)
 
     ax.set_title("Average activity over time")
 
@@ -90,5 +90,37 @@ def plotActivityOverTime(data: pd.DataFrame):
 
 plotActivityOverTime(data)
 
+
+def plotActivityOverWeek(data: pd.DataFrame):
+
+    noGroup = data[data["chat_with"] != "GROUP"]
+
+    noGroup["sent_by_user"] = noGroup["sender_name"] == USER
+    # noGroup[""] noGroup["sender_name"] == USER
+
+    plotting = noGroup.groupby(["weekday", "sent_by_user"], as_index=True).agg([
+        'count']).reset_index()
+
+    # plotting["weekday"] = plotting.index[:0]
+
+    plotting["message_direction"] = plotting["sent_by_user"].apply(
+        lambda x: 'Sent' if x else 'Received')
+    g = sns.catplot(x="weekday", y=('sender_name', 'count'), hue="message_direction", data=plotting,
+                    height=6, kind="bar", palette="muted")
+
+    plt.subplots_adjust(top=0.9)
+    g.fig.suptitle("Average activity over week")
+    g.axes[0, 0].set_xlabel('Weekday')
+    g.axes[0, 0].set_ylabel('Total Messages')
+    g.axes[0, 0].set_xticklabels(
+        g.axes[0, 0].get_xticklabels(), horizontalalignment='right',  rotation=45)
+    plt.show()
+
+
+plotActivityOverWeek(data)
+
 # TODO
+# Average the number of messages to be per day
+# Activity over week (AVERAGE)
 # Keywords per chat
+# Activity over day
