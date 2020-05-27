@@ -1,5 +1,8 @@
 import pandas as pd
 import seaborn as sns
+import statsmodels
+import datetime
+
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 from datetime import date
@@ -54,37 +57,41 @@ messagesInAChatBarPlot(data, chats=15)
 def plotActivityOverTime(data: pd.DataFrame):
     noGroup = data[data["chat_with"] != "GROUP"]
 
-    sentByUser = noGroup[noGroup["sender_name"] == USER]
-    userPlot = sentByUser.groupby(["date"]).agg(['count'])
-    userPlot["messages_per_day"] = userPlot[userPlot.columns[0]]
-    userPlot["date"] = userPlot.index
-    userPlot["date_ordinal"] = pd.to_datetime(
-        userPlot['date']).apply(lambda date: date.toordinal())
+    noGroup["sent_by_user"] = noGroup["sender_name"] == USER
 
-    sentToUser = noGroup[noGroup["sender_name"] != USER]
-    toUserPlot = sentToUser.groupby(["date"]).agg(['count'])
-    toUserPlot["messages_per_day"] = toUserPlot[toUserPlot.columns[0]]
-    toUserPlot["date"] = toUserPlot.index
-    toUserPlot["date_ordinal"] = pd.to_datetime(
-        toUserPlot['date']).apply(lambda date: date.toordinal())
+    byDates = noGroup.groupby(["date", "sent_by_user"], as_index=True).agg([
+        'count'])
 
-    ax = sns.regplot(data=userPlot, x="date_ordinal", y="messages_per_day",
-                     order=3, scatter=False, scatter_kws={"alpha": 0.03}, label="Sent by user", color="green")
-    ax = sns.regplot(data=toUserPlot, x="date_ordinal", y="messages_per_day",
-                     order=3, scatter=False, scatter_kws={"alpha": 0.03}, label="Sent to user", color="red")
+    dates = pd.date_range(min(data["date"]), max(data["date"]))
 
-    # ax.set_xlim(userPlot['date_ordinal'].min() - 1, userPlot['date_ordinal'].max() + 1)
-    # ax.set_ylim(0, userPlot['messages_per_day'].max() + 1)
-    ax.grid(True)
-    ax.yaxis.set_major_locator(MultipleLocator(10))
-    ax.set_xlabel('Date')
-    ax.set_ylabel('Average messages per day')
-    new_labels = [date.fromordinal(int(item)) for item in ax.get_xticks()]
-    ax.set_xticklabels(new_labels, horizontalalignment='right',  rotation=45)
+    plotting = byDates.reindex(dates, level=0).reset_index()
 
-    ax.set_title("Average activity over time")
+    plotting["messages_per_day"] = plotting[("sender_name", "count")]
+    plotting["Message direction"] = plotting["sent_by_user"].apply(
+        lambda x: "Sent" if x else "Received")
 
-    plt.legend(labels=['Sent by {}'.format(USER), 'Sent to {}'.format(USER)])
+    plotting["date_float"] = plotting["date"].values.astype(float)
+
+    g = sns.lmplot(data=plotting, x="date_float", y="messages_per_day",
+                   hue="Message direction", scatter=False, order=5, legend_out=False, aspect=1.7)
+
+    plt.subplots_adjust(top=0.9)
+    g.fig.suptitle("Average messages number over time")
+    g.axes[0, 0].yaxis.set_major_locator(MultipleLocator(10))
+
+    avgSecondsInMonth = 2628288*int(1e9)
+    numberOfMonths = 2
+
+    g.axes[0, 0].xaxis.set_major_locator(
+        MultipleLocator(avgSecondsInMonth*numberOfMonths))
+    g.axes[0, 0].set_xlabel('Time')
+    g.axes[0, 0].set_ylabel('Messages per day')
+
+    xticks = g.axes[0, 0].get_xticks()
+    xticks_dates = [datetime.datetime.fromtimestamp(
+        x/int(1e9)).strftime(' %b %Y') for x in xticks]
+    g.axes[0, 0].set_xticklabels(
+        xticks_dates,  rotation=45, horizontalalignment='right')
     plt.show()
 
 
@@ -101,17 +108,23 @@ def plotActivityOverWeek(data: pd.DataFrame):
     plotting = noGroup.groupby(["weekday", "sent_by_user"], as_index=True).agg([
         'count']).reset_index()
 
+    numberOfDays = len(pd.period_range(min(data["date"]), max(data["date"])))
+
+    plotting["average_messages_per_day"] = plotting[(
+        'sender_name', 'count')]/(numberOfDays/7)
+
     # plotting["weekday"] = plotting.index[:0]
 
     plotting["message_direction"] = plotting["sent_by_user"].apply(
         lambda x: 'Sent' if x else 'Received')
-    g = sns.catplot(x="weekday", y=('sender_name', 'count'), hue="message_direction", data=plotting,
+
+    g = sns.catplot(x="weekday", y="average_messages_per_day", hue="message_direction", data=plotting,
                     height=6, kind="bar", palette="muted")
 
     plt.subplots_adjust(top=0.9)
     g.fig.suptitle("Average activity over week")
     g.axes[0, 0].set_xlabel('Weekday')
-    g.axes[0, 0].set_ylabel('Total Messages')
+    g.axes[0, 0].set_ylabel('Messages per day')
     g.axes[0, 0].set_xticklabels(
         g.axes[0, 0].get_xticklabels(), horizontalalignment='right',  rotation=45)
     plt.show()
@@ -119,8 +132,9 @@ def plotActivityOverWeek(data: pd.DataFrame):
 
 plotActivityOverWeek(data)
 
+
 # TODO
-# Average the number of messages to be per day
+# Average the number of messages to be per day (FILL MISSING ZERO-DAYS)
 # Activity over week (AVERAGE)
 # Keywords per chat
 # Activity over day
