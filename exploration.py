@@ -9,7 +9,6 @@ from datetime import date
 
 sns.set()
 
-# DATA_DIR = 'inbox/'
 MESSAGES_FILE = "all_messages.csv"
 TIMEZONE = "Europe/Warsaw"
 USER = "Bartek Pogod"
@@ -43,7 +42,6 @@ def messagesInAChatBarPlot(data: pd.DataFrame, chats: int):
     ax = sns.barplot(x=plotData["messages_number"],
                      y=plotData["person"], orient="h")
     ax.grid(True)
-    # ax.right_ax(False)
     ax.set_title("{} {}'s chats with the most messages".format(chats, USER))
     ax.set_ylabel('Chat participant')
     ax.set_xlabel('Total number of messages')
@@ -103,7 +101,6 @@ def plotActivityOverWeek(data: pd.DataFrame):
     noGroup = data[data["chat_with"] != "GROUP"]
 
     noGroup["sent_by_user"] = noGroup["sender_name"] == USER
-    # noGroup[""] noGroup["sender_name"] == USER
 
     plotting = noGroup.groupby(["weekday", "sent_by_user"], as_index=True).agg([
         'count']).reset_index()
@@ -113,17 +110,23 @@ def plotActivityOverWeek(data: pd.DataFrame):
     plotting["average_messages_per_day"] = plotting[(
         'sender_name', 'count')]/(numberOfDays/7)
 
-    # plotting["weekday"] = plotting.index[:0]
-
     plotting["message_direction"] = plotting["sent_by_user"].apply(
         lambda x: 'Sent' if x else 'Received')
+
+    plotting = plotting.sort_values(by=["weekday"])
+    cats = ['Monday', 'Tuesday', 'Wednesday',
+            'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+    cat_type = pd.api.types.CategoricalDtype(categories=cats, ordered=True)
+
+    plotting['weekday'] = plotting['weekday'].astype(cat_type)
 
     g = sns.catplot(x="weekday", y="average_messages_per_day", hue="message_direction", data=plotting,
                     height=6, kind="bar", palette="muted")
 
     plt.subplots_adjust(top=0.9)
     g.fig.suptitle("Average activity over week")
-    g.axes[0, 0].set_xlabel('Weekday')
+    g.axes[0, 0].set_xlabel('Day of the week')
     g.axes[0, 0].set_ylabel('Messages per day')
     g.axes[0, 0].set_xticklabels(
         g.axes[0, 0].get_xticklabels(), horizontalalignment='right',  rotation=45)
@@ -134,7 +137,6 @@ plotActivityOverWeek(data)
 
 
 # TODO
-# Average the number of messages to be per day (FILL MISSING ZERO-DAYS)
-# Activity over week (AVERAGE)
 # Keywords per chat
 # Activity over day
+# Add averaged by week activity over time
