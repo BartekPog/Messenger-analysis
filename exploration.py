@@ -51,7 +51,6 @@ def messagesInAChatBarPlot(data: pd.DataFrame, chats: int):
 messagesInAChatBarPlot(data, chats=15)
 
 
-# overal activity over time
 def plotActivityOverTime(data: pd.DataFrame):
     noGroup = data[data["chat_with"] != "GROUP"]
 
@@ -72,6 +71,8 @@ def plotActivityOverTime(data: pd.DataFrame):
 
     g = sns.lmplot(data=plotting, x="date_float", y="messages_per_day",
                    hue="Message direction", scatter=False, order=5, legend_out=False, aspect=1.7)
+
+    g.set(xlim=(plotting["date_float"].min(), plotting["date_float"].max()))
 
     plt.subplots_adjust(top=0.9)
     g.fig.suptitle("Average messages number over time")
@@ -126,6 +127,7 @@ def plotActivityOverWeek(data: pd.DataFrame):
 
     plt.subplots_adjust(top=0.9)
     g.fig.suptitle("Average activity over week")
+    g._legend.set_title("Message direction")
     g.axes[0, 0].set_xlabel('Day of the week')
     g.axes[0, 0].set_ylabel('Messages per day')
     g.axes[0, 0].set_xticklabels(
@@ -137,6 +139,7 @@ plotActivityOverWeek(data)
 
 
 # TODO
-# Keywords per chat
+
 # Activity over day
-# Add averaged by week activity over time
+# Keywords per chat (6 best)
+# activity over time per chat (6 best)
