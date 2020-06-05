@@ -114,7 +114,6 @@ def plotActivityOverWeek(data: pd.DataFrame):
     plotting["message_direction"] = plotting["sent_by_user"].apply(
         lambda x: 'Sent' if x else 'Received')
 
-    plotting = plotting.sort_values(by=["weekday"])
     cats = ['Monday', 'Tuesday', 'Wednesday',
             'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -137,44 +136,93 @@ def plotActivityOverWeek(data: pd.DataFrame):
 
 plotActivityOverWeek(data)
 
-# def plotActivityOverDay(data: pd.DataFrame):
+
+def plotActivityOverDay(data: pd.DataFrame):
+    noGroup = data[data["chat_with"] != "GROUP"]
+
+    noGroup["sent_by_user"] = noGroup["sender_name"] == USER
+
+    plotting = noGroup.groupby(
+        ["hour", "sent_by_user"]).agg("count").reset_index()
+
+    numberOfHours = len(pd.period_range(min(data["date"]), max(data["date"])))
+
+    plotting["avg_messages_per_hour"] = plotting["sender_name"]/numberOfHours
+
+    plotting["message_direction"] = plotting["sent_by_user"].apply(
+        lambda x: 'Sent' if x else 'Received')
+
+    plotting["hour_num"] = plotting["hour"].astype(int)
+
+    g = sns.lmplot(data=plotting, x="hour_num", y="avg_messages_per_hour",
+                   hue="message_direction", scatter=False, order=4, legend_out=False, aspect=1.7)
+
+    g.axes[0, 0].xaxis.set_major_locator(
+        MultipleLocator(2))
+    g.set(xlim=(0, 23))
+
+    g.ax.legend(loc=2)
+
+    plt.subplots_adjust(top=0.9)
+    g.fig.suptitle("Average messages number over day")
+    g.axes[0, 0].set_xlabel('Hour')
+    g.axes[0, 0].set_ylabel('Number of messages')
+
+    plt.show()
 
 
-noGroup = data[data["chat_with"] != "GROUP"]
-
-noGroup["sent_by_user"] = noGroup["sender_name"] == USER
-
-plotting = noGroup.groupby(["hour", "sent_by_user"]).agg("count").reset_index()
-
-numberOfHours = len(pd.period_range(min(data["date"]), max(data["date"])))
-
-plotting["avg_messages_per_hour"] = plotting["sender_name"]/numberOfHours
-
-plotting["message_direction"] = plotting["sent_by_user"].apply(
-    lambda x: 'Sent' if x else 'Received')
-
-plotting["hour_num"] = plotting["hour"].astype(int)
-
-g = sns.lmplot(data=plotting, x="hour_num", y="avg_messages_per_hour",
-               hue="message_direction", scatter=False, order=4, legend_out=False, aspect=1.7)
-
-g.axes[0, 0].xaxis.set_major_locator(
-    MultipleLocator(2))
-g.set(xlim=(0, 23))
-
-g.ax.legend(loc=2)
+plotActivityOverDay(data)
 
 
-plt.subplots_adjust(top=0.9)
-g.fig.suptitle("Average messages number over day")
-g.axes[0, 0].set_xlabel('Hour')
-g.axes[0, 0].set_ylabel('Number of messages')
+def plotActivityForMostFrequentNonGroupChats(data: pd.DataFrame, chats: int, order: int):
+    noGroup = data[data["chat_with"] != "GROUP"]
+    plotDataSeries = noGroup["chat_with"].value_counts()[:chats]
 
-plt.show()
+    names = [name[0] for name in plotDataSeries.items()]
+
+    onlyChosen = noGroup[noGroup["chat_with"].isin(names)]
+
+    byDates = onlyChosen.groupby(["date", "chat_with"], as_index=True).agg(
+        'count')
+
+    dates = pd.date_range(min(data["date"]), max(data["date"]))
+
+    plotting = byDates.reindex(dates, level=0).reset_index()
+
+    plotting["messages_per_day"] = plotting["sender_name"]
+
+    plotting["date_float"] = plotting["date"].values.astype(float)
+
+    cat_type = pd.api.types.CategoricalDtype(categories=names, ordered=True)
+
+    plotting['chat_with'] = plotting['chat_with'].astype(cat_type)
+
+    g = sns.lmplot(data=plotting, x="date_float", y="messages_per_day", hue="chat_with",
+                   scatter=False, order=order, legend_out=False, aspect=1.7, ci=None)
+
+    g.set(xlim=(plotting["date_float"].min(),
+                plotting["date_float"].max()), ylim=(0, None))
+
+    plt.subplots_adjust(top=0.9)
+    g.fig.suptitle("Average messages number per day by chat")
+    g.axes[0, 0].yaxis.set_major_locator(MultipleLocator(20))
+    g.axes[0, 0].yaxis.set_minor_locator(MultipleLocator(10))
+
+    avgSecondsInMonth = 2628288*int(1e9)
+    numberOfMonths = 2
+
+    g.axes[0, 0].xaxis.set_major_locator(
+        MultipleLocator(avgSecondsInMonth*numberOfMonths))
+    g.axes[0, 0].set_xlabel('Time')
+    g.axes[0, 0].set_ylabel('Messages per day')
+    g._legend.set_title("Chat")
+
+    xticks = g.axes[0, 0].get_xticks()
+    xticks_dates = [datetime.datetime.fromtimestamp(
+        x/int(1e9)).strftime(' %b %Y') for x in xticks]
+    g.axes[0, 0].set_xticklabels(
+        xticks_dates,  rotation=45, horizontalalignment='right')
+    plt.show()
 
 
-# TODO
-
-# Activity over day
-# Keywords per chat (6 best)
-# activity over time per chat (6 best)
+plotActivityForMostFrequentNonGroupChats(data, 5, 3)

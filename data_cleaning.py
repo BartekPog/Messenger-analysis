@@ -57,6 +57,7 @@ def readOne(fileName: str):
 
     messages = pd.DataFrame(conversation["messages"])
     messages["chat_with"] = coParticipant
+    messages["participants_number"] = len(participants)
 
     return messages
 
