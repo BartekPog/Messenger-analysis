@@ -137,6 +137,41 @@ def plotActivityOverWeek(data: pd.DataFrame):
 
 plotActivityOverWeek(data)
 
+# def plotActivityOverDay(data: pd.DataFrame):
+
+
+noGroup = data[data["chat_with"] != "GROUP"]
+
+noGroup["sent_by_user"] = noGroup["sender_name"] == USER
+
+plotting = noGroup.groupby(["hour", "sent_by_user"]).agg("count").reset_index()
+
+numberOfHours = len(pd.period_range(min(data["date"]), max(data["date"])))
+
+plotting["avg_messages_per_hour"] = plotting["sender_name"]/numberOfHours
+
+plotting["message_direction"] = plotting["sent_by_user"].apply(
+    lambda x: 'Sent' if x else 'Received')
+
+plotting["hour_num"] = plotting["hour"].astype(int)
+
+g = sns.lmplot(data=plotting, x="hour_num", y="avg_messages_per_hour",
+               hue="message_direction", scatter=False, order=4, legend_out=False, aspect=1.7)
+
+g.axes[0, 0].xaxis.set_major_locator(
+    MultipleLocator(2))
+g.set(xlim=(0, 23))
+
+g.ax.legend(loc=2)
+
+
+plt.subplots_adjust(top=0.9)
+g.fig.suptitle("Average messages number over day")
+g.axes[0, 0].set_xlabel('Hour')
+g.axes[0, 0].set_ylabel('Number of messages')
+
+plt.show()
+
 
 # TODO
 
