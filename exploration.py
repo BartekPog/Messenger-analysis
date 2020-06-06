@@ -154,7 +154,6 @@ plotActivityForMostFrequentNonGroupChats(data, 4, 3)
 
 
 def plotActivityOverWeek(data: pd.DataFrame):
-
     noGroup = data[data["chat_with"] != "GROUP"]
 
     noGroup["sent_by_user"] = noGroup["sender_name"] == USER
