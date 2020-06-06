@@ -2,3 +2,5 @@
 inbox/
 .vscode/
 all_messages.csv
+__pycache__/
+figures/

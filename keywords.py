@@ -92,7 +92,7 @@ def getKeywords(corpus: list, language: str, keyword_number: int = 15) -> list:
 
         keywords = []
         numberOfKwds = 0
-        for word, score in scoredDoc:
+        for word, _ in scoredDoc:
             if(word not in keywords):
                 keywords.append(word)
                 numberOfKwds = numberOfKwds+1
