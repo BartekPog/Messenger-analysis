@@ -7,6 +7,9 @@ import os
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 from datetime import date
+from wordcloud import WordCloud
+
+from textrank import KeywordExtractor
 
 sns.set()
 
@@ -234,3 +237,45 @@ def plotActivityOverDay(data: pd.DataFrame, user: str, save_dir: str = None):
         assertDir(save_dir)
         fullPath = os.path.join(save_dir, plotName+".png")
         g.savefig(fullPath)
+
+
+def generateKeywordClouds(data: pd.DataFrame, user: str, chats: int = 6, keyword_numbers=(20, 15, 5, 2), save_dir: str = None):
+    plotName = "keywordCloud"
+
+    noGroup = data[data["chat_with"] != "GROUP"]
+    plotDataSeries = noGroup["chat_with"].value_counts()[:chats]
+    names = [name[0] for name in plotDataSeries.items()]
+
+    extractor = KeywordExtractor(
+        language="polish", verbose=False, lemmatize=False)
+
+    for idx, name in enumerate(names):
+        oneChat = data[data["chat_with"] == name]
+        chatString = ". ".join(oneChat["content"].astype(str).values)
+
+        # keywords = []
+        keywordFreq = dict()
+
+        for n_gram, number in enumerate(keyword_numbers, start=1):
+            newKeywords = extractor.analyze(
+                chatString, keywords_number=number, n_gram=n_gram, window_size=4)
+
+            for word in newKeywords:
+                keywordFreq[word] = n_gram/len(keyword_numbers)
+            # keywords.extend(extractor.analyze(
+                # chatString, keywords_number=number, n_gram=n_gram, window_size=4))
+
+        # withFreq = dict(zip(keywords, [1]*len(keywords)))
+
+        wordcloud = WordCloud(background_color="white", width=1000,
+                              height=600).generate_from_frequencies(keywordFreq)
+        plt.figure(figsize=(15, 8))
+        plt.axis("off")
+        plt.title(name, fontdict={"fontsize": 50, "fontweight": 7}, pad=7)
+        plt.imshow(wordcloud, interpolation="bilinear")
+        if save_dir == None:
+            plt.show()
+        else:
+            assertDir(save_dir)
+            fullPath = os.path.join(save_dir, plotName+str(idx)+name+".png")
+            plt.savefig(fullPath)

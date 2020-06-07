@@ -51,7 +51,7 @@ def getModel(language: str = "english", models_dir: str = DEFAULT_MODELS_FOLDER)
     return Model(models[language])
 
 
-class TextRank4Keyword():
+class KeywordExtractor():
     """Extract keywords from text"""
 
     def __init__(self, language: str, lemmatize: bool = False, verbose: bool = True, stopwords_dir: str = DEFAULT_STOPWORDS_FOLDER, models_dir: str = DEFAULT_MODELS_FOLDER, pos: list = POSSIBLE_KEYWORD_POS, following_character_limit: int = 2):

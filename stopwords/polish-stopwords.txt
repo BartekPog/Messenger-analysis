@@ -36,6 +36,7 @@ inny
 ja
 ją
 jak
+już
 jakby
 jaki
 je
@@ -135,6 +136,7 @@ wy
 żaden
 zawsze
 że
+żeby
 xd
 xdd
 xddd
