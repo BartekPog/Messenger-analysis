@@ -23,9 +23,6 @@ names = [name[0] for name in plotDataSeries.items()]
 corpus = createCorpus(data, names)
 
 
-extractor = TextRank4Keyword(language="polish", verbose=True, lemmatize=False)
-
-
 sampleText1 = '''Siała baba mak
 Nie wiedziała jak
 A dziad wiedział
@@ -70,19 +67,23 @@ Sekret zdradzić tu wypada
 Aby utrzeć nosa babie
 Wsypał w worek piach'''
 
+extractor = TextRank4Keyword(language="polish", verbose=False, lemmatize=False)
 
-extractor.analyze(sampleText1)
-print(extractor.get_keywords(keywordNum))
+# print(extractor.analyze(sampleText1))
+# print(extractor.get_keywords(keywordNum))
 # zip(names, chatKeywords)a
 
-chatKeywords = []
+# chatKeywords = []
 
-for chat in corpus[2:5]:
-    extractor.analyze(chat)
-    chatKeywords.append(extractor.get_keywords(keywordNum))
+for name, chat in zip(names, corpus):
+    print(name, extractor.analyze(
+        chat, keywords_number=15, n_gram=4, window_size=4))
+    print()
+# extractor.analyze(chat)
 
 
 print("done")
-print(list(zip(names, chatKeywords)))
+# print(chatKeywords)
+# print(list(zip(names, chatKeywords)))
 
-extractor.get_keywords(keywordNum)
+# extractor.get_keywords(keywordNum)
