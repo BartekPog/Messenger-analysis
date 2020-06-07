@@ -3,6 +3,7 @@ import seaborn as sns
 import statsmodels
 import datetime
 import os
+import random
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
@@ -10,6 +11,10 @@ from datetime import date
 from wordcloud import WordCloud
 
 from textrank import KeywordExtractor
+
+FONT_PATH = "fonts"
+FONT_NAME = "Righteous-Regular.ttf"
+COLORS = ["inferno", "spring", "cividis", "copper", "Pastel1"]
 
 sns.set()
 
@@ -253,7 +258,6 @@ def generateKeywordClouds(data: pd.DataFrame, user: str, chats: int = 6, keyword
         oneChat = data[data["chat_with"] == name]
         chatString = ". ".join(oneChat["content"].astype(str).values)
 
-        # keywords = []
         keywordFreq = dict()
 
         for n_gram, number in enumerate(keyword_numbers, start=1):
@@ -261,13 +265,11 @@ def generateKeywordClouds(data: pd.DataFrame, user: str, chats: int = 6, keyword
                 chatString, keywords_number=number, n_gram=n_gram, window_size=4)
 
             for word in newKeywords:
-                keywordFreq[word] = n_gram/len(keyword_numbers)
-            # keywords.extend(extractor.analyze(
-                # chatString, keywords_number=number, n_gram=n_gram, window_size=4))
+                keywordFreq[word.capitalize()] = n_gram/len(keyword_numbers)
 
-        # withFreq = dict(zip(keywords, [1]*len(keywords)))
+        fontPath = os.path.abspath(os.path.join(FONT_PATH, FONT_NAME))
 
-        wordcloud = WordCloud(background_color="white", width=1000,
+        wordcloud = WordCloud(background_color="white", font_path=fontPath, colormap=random.choice(COLORS), width=1000,
                               height=600).generate_from_frequencies(keywordFreq)
         plt.figure(figsize=(15, 8))
         plt.axis("off")

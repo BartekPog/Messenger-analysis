@@ -40,4 +40,5 @@ plots.plotActivityForMostFrequentNonGroupChats(
     data, chats=4, order=3, save_dir=PLOTS_DIR)
 plots.plotActivityOverWeek(data, user=USER, save_dir=PLOTS_DIR)
 plots.plotActivityOverDay(data, user=USER, save_dir=PLOTS_DIR)
-plots.generateKeywordClouds(data, user=USER, chats=8, save_dir=PLOTS_DIR)
+plots.generateKeywordClouds(
+    data, user=USER, chats=8, save_dir=PLOTS_DIR)
