@@ -1,12 +1,13 @@
 import os
 import re
+import pandas as pd
 from corpy.udpipe import Model
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 DEFAULT_MODELS_FOLDER = "language_models"
 DEFAULT_STOPWORDS_FOLDER = "stopwords"
 
-POSSIBLE_KEYWORD_POS = ["NOUN", "VERB", "PROPN", "ADJ", "ADV"]
+POSSIBLE_KEYWORD_POS = ["NOUN", "VERB", "ADJ", "ADV"]  # "PROPN"
 
 
 def getStopwords(language: str, stopwords_dir: str = DEFAULT_STOPWORDS_FOLDER) -> list:
@@ -77,8 +78,9 @@ def preprocessText(text: str, language: str) -> str:
     return ' '.join(tokenize(text, language))
 
 
-def getKeywords(corpus: list, language: str, keyword_number: int = 15) -> list:
+def getKeywordsFromCorpus(corpus: list, language: str, number_of_keywords: int = 15) -> list:
     corpusPrep = [preprocessText(text, language) for text in corpus]
+    # corpusPrep = corpus
 
     vectorizer = TfidfVectorizer(ngram_range=(1, 2))
 
@@ -97,7 +99,7 @@ def getKeywords(corpus: list, language: str, keyword_number: int = 15) -> list:
                 keywords.append(word)
                 numberOfKwds = numberOfKwds+1
 
-            if(numberOfKwds >= N):
+            if(numberOfKwds >= number_of_keywords):
                 break
 
         keywordsPerDoc.append(keywords)
@@ -218,4 +220,41 @@ N = 10
 
 corpus = [sampleText1, sampleText2]
 
-getKeywords(corpus, language, N)
+
+def createCorpus(data: pd.DataFrame, names: str) -> list:
+    corpus = []
+    for name in names:
+        oneChat = data[data["chat_with"] == name]
+        chatString = " ".join(oneChat["content"].astype(str).values)
+        corpus.append(chatString)
+
+    return corpus
+
+
+def getKeywordsFromData(data: pd.DataFrame, language: str, chats: int, number_of_keywords: int) -> list:
+    noGroup = data[data["chat_with"] != "GROUP"]
+    plotDataSeries = noGroup["chat_with"].value_counts()[:chats]
+    names = [name[0] for name in plotDataSeries.items()]
+
+    corpus = createCorpus(data, names)
+
+    keywords = getKeywordsFromCorpus(corpus, language, number_of_keywords)
+
+    return list(zip(names, keywords))
+
+
+# Reading data
+# save?
+# chats = 6
+# data = pd.read_csv(MESSAGES_FILE)
+# noGroup = data[data["chat_with"] != "GROUP"]
+# plotDataSeries = noGroup["chat_with"].value_counts()[:chats]
+# names = [name[0] for name in plotDataSeries.items()]
+
+
+data = pd.read_csv("all_messages.csv")
+getKeywordsFromData(data, "polish", 6, 8)
+
+
+# onlyChosen = noGroup[noGroup["chat_with"].isin(names)]
+# WORDS PER CHAT

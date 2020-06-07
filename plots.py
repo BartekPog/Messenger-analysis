@@ -93,6 +93,7 @@ def plotActivityOverTime(data: pd.DataFrame, user: str, save_dir: str = None):
 
 def plotActivityForMostFrequentNonGroupChats(data: pd.DataFrame, chats: int, order: int, save_dir: str = None):
     plotName = "activity-for-most-frequent-non-group-chats"
+
     legendOut = True if chats > 5 else False
 
     noGroup = data[data["chat_with"] != "GROUP"]
