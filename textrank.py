@@ -71,7 +71,7 @@ class KeywordExtractor():
         self.verbose = verbose
         self.lemmatize = lemmatize
         self.followingCharacterLimit = following_character_limit
-        self.batchTokens = 700
+        self.batchTokens = 1400
 
     def clean_text(self, text: str):
         noLinks = " ".join([word.lower() for word in text.split()
@@ -267,6 +267,6 @@ class KeywordExtractor():
 
         keywordsList = sorted(keywordValue.items(),
                               key=lambda item: item[1], reverse=True)
-        keywordsSorted = [key for key, value in keywordsList]
+        # keywordsSorted = [key for key, value in keywordsList]
 
-        return keywordsSorted[:keywords_number]
+        return keywordsList[:keywords_number]

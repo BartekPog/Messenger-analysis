@@ -1,7 +1,9 @@
 import pandas as pd
+import numpy as np
 import seaborn as sns
 import statsmodels
 import datetime
+import re
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
@@ -11,6 +13,7 @@ import plots
 
 TIMEZONE = "Europe/Warsaw"
 USER = "Bartek Pogod"
+LANGUAGE = "polish"
 
 MESSAGES_FILE = "all_messages.csv"
 PLOTS_DIR = "figures"
@@ -40,5 +43,7 @@ plots.plotActivityForMostFrequentNonGroupChats(
     data, chats=4, order=3, save_dir=PLOTS_DIR)
 plots.plotActivityOverWeek(data, user=USER, save_dir=PLOTS_DIR)
 plots.plotActivityOverDay(data, user=USER, save_dir=PLOTS_DIR)
+plots.plotMessageLengthDistributionPerChat(data, user=USER, save_dir=PLOTS_DIR)
 plots.generateKeywordClouds(
-    data, user=USER, chats=8, save_dir=PLOTS_DIR)
+    data, user=USER, language=LANGUAGE, chats=8, save_dir=PLOTS_DIR, background_color="white", lemmatize=False)
+

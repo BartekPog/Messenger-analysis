@@ -4,6 +4,8 @@ import statsmodels
 import datetime
 import os
 import random
+import re
+import numpy as np
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
@@ -14,7 +16,7 @@ from textrank import KeywordExtractor
 
 FONT_PATH = "fonts"
 FONT_NAME = "Righteous-Regular.ttf"
-COLORS = ["inferno", "spring", "cividis", "copper", "Pastel1"]
+COLORS = ["twilight", "cividis", "copper", "bone", "magma"]
 
 sns.set()
 
@@ -45,7 +47,7 @@ def plotMessagesInChats(data: pd.DataFrame, chats: int, user: str, save_dir: str
     else:
         assertDir(save_dir)
         fullPath = os.path.join(save_dir, plotName+".png")
-        ax.get_figure().savefig(fullPath)
+        ax.figure.savefig(fullPath, bbox_inches='tight')
 
 
 def plotActivityOverTime(data: pd.DataFrame, user: str, save_dir: str = None):
@@ -244,7 +246,7 @@ def plotActivityOverDay(data: pd.DataFrame, user: str, save_dir: str = None):
         g.savefig(fullPath)
 
 
-def generateKeywordClouds(data: pd.DataFrame, user: str, chats: int = 6, keyword_numbers=(20, 15, 5, 2), save_dir: str = None):
+def generateKeywordClouds(data: pd.DataFrame, user: str, language: str = "polish", chats: int = 6, keyword_numbers=(20, 17, 6, 3), save_dir: str = None, background_color: str = "white", lemmatize: bool = False):
     plotName = "keywordCloud"
 
     noGroup = data[data["chat_with"] != "GROUP"]
@@ -252,11 +254,14 @@ def generateKeywordClouds(data: pd.DataFrame, user: str, chats: int = 6, keyword
     names = [name[0] for name in plotDataSeries.items()]
 
     extractor = KeywordExtractor(
-        language="polish", verbose=False, lemmatize=False)
+        language=language, verbose=False, lemmatize=lemmatize)
 
     for idx, name in enumerate(names):
         oneChat = data[data["chat_with"] == name]
         chatString = ". ".join(oneChat["content"].astype(str).values)
+        if(background_color == "black"):
+            fig = plt.figure()
+            fig.patch.set_facecolor('black')
 
         keywordFreq = dict()
 
@@ -264,20 +269,86 @@ def generateKeywordClouds(data: pd.DataFrame, user: str, chats: int = 6, keyword
             newKeywords = extractor.analyze(
                 chatString, keywords_number=number, n_gram=n_gram, window_size=4)
 
-            for word in newKeywords:
-                keywordFreq[word.capitalize()] = n_gram/len(keyword_numbers)
+            for word, value in newKeywords:
+                # n_gram/len(keyword_numbers)
+                keywordFreq[word.capitalize()] = 100*value
 
         fontPath = os.path.abspath(os.path.join(FONT_PATH, FONT_NAME))
 
-        wordcloud = WordCloud(background_color="white", font_path=fontPath, colormap=random.choice(COLORS), width=1000,
-                              height=600).generate_from_frequencies(keywordFreq)
-        plt.figure(figsize=(15, 8))
+        wordcloud = WordCloud(background_color=background_color, font_path=fontPath, colormap=random.choice(COLORS), width=2000,
+                              height=1200).generate_from_frequencies(keywordFreq)
+        plt.figure(figsize=(30, 16))
         plt.axis("off")
         plt.title(name, fontdict={"fontsize": 50, "fontweight": 7}, pad=7)
+
         plt.imshow(wordcloud, interpolation="bilinear")
+
         if save_dir == None:
             plt.show()
         else:
             assertDir(save_dir)
             fullPath = os.path.join(save_dir, plotName+str(idx)+name+".png")
             plt.savefig(fullPath)
+
+
+def countWords(text: str) -> int:
+    pattern = r"[^\W|\d]+"
+    words = re.findall(pattern, text)
+    return len(words)
+
+
+def plotMessageLengthDistributionPerChat(data: pd.DataFrame, user: str, chats: int = 6, bins: int = 12, save_dir: str = None):
+    plotName = "message-length-distribution-per-chat"
+
+    generic = data[data["type"] == "Generic"]
+    noGroup = generic[generic["chat_with"] != "GROUP"]
+
+    plotDataSeries = noGroup["chat_with"].value_counts()[:chats]
+    names = [name[0] for name in plotDataSeries.items()]
+
+    plotting = noGroup.dropna(subset=["content"])
+
+    plotting = plotting[plotting["chat_with"].isin(names)]
+
+    plotting["message_length"] = plotting["content"].apply(countWords)
+    plotting = plotting[plotting["message_length"] > 0]
+
+    plotting["message_direction"] = plotting["sender_name"].apply(
+        lambda x: "Sent" if x == user else "Received")
+
+    cat_type = pd.api.types.CategoricalDtype(categories=names, ordered=True)
+
+    plotting['chat_with'] = plotting['chat_with'].astype(cat_type)
+
+    logMin = np.log10(plotting["message_length"].min())
+    logMax = np.log10(plotting["message_length"].max())
+
+    newBins = np.logspace(logMin, logMax, bins)
+
+    g = sns.FacetGrid(plotting, col="chat_with", hue="message_direction",
+                      col_wrap=2, aspect=1.4, sharex=True, sharey=True, margin_titles=True, palette="Set1")
+
+    g.map(sns.distplot, "message_length", bins=newBins,
+          hist=True, kde=False, norm_hist=True).set(xscale='log', yscale='log')
+    g.set_titles("{col_name}")
+    g.add_legend(title="Message direction")
+    g.set_axis_labels(x_var="Number of words in message",
+                      y_var="Percentage of messages")
+
+    yTicks = g.axes[0].get_yticks()
+    newYTicks = [str(tick*100)+'%' for tick in yTicks]
+    g.set_yticklabels(newYTicks)
+
+    xTicks = g.axes[0].get_xticks()
+    newXTicks = [str(int(tick)) for tick in xTicks]
+    g.set_xticklabels(newXTicks)
+
+    plt.subplots_adjust(top=0.9)
+    g.fig.suptitle('Message length distribution per chat')
+
+    if save_dir == None:
+        plt.show()
+    else:
+        assertDir(save_dir)
+        fullPath = os.path.join(save_dir, plotName+".png")
+        g.savefig(fullPath)
