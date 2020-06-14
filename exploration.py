@@ -44,6 +44,9 @@ plots.plotActivityForMostFrequentNonGroupChats(
 plots.plotActivityOverWeek(data, user=USER, save_dir=PLOTS_DIR)
 plots.plotActivityOverDay(data, user=USER, save_dir=PLOTS_DIR)
 plots.plotMessageLengthDistributionPerChat(data, user=USER, save_dir=PLOTS_DIR)
+plots.plotAverageMessageLength(
+    data, user=USER, chats=20, messagesTreshold=0.1, save_dir=PLOTS_DIR)
 plots.generateKeywordClouds(
     data, user=USER, language=LANGUAGE, chats=8, save_dir=PLOTS_DIR, background_color="white", lemmatize=False)
 
+# Plot user activity in groups over time

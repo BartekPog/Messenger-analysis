@@ -27,7 +27,7 @@ def assertDir(directory: str):
 
 
 def plotMessagesInChats(data: pd.DataFrame, chats: int, user: str, save_dir: str = None):
-    plotName = "messages_in_chats"
+    plotName = "messages-in-chats"
 
     noGroup = data[data["chat_with"] != "GROUP"]
     plotDataSeries = noGroup["chat_with"].value_counts()[:chats]
@@ -51,7 +51,7 @@ def plotMessagesInChats(data: pd.DataFrame, chats: int, user: str, save_dir: str
 
 
 def plotActivityOverTime(data: pd.DataFrame, user: str, save_dir: str = None):
-    plotName = "activity_over_time"
+    plotName = "activity-over-time"
 
     noGroup = data[data["chat_with"] != "GROUP"]
 
@@ -71,7 +71,7 @@ def plotActivityOverTime(data: pd.DataFrame, user: str, save_dir: str = None):
     plotting["date_float"] = plotting["date"].values.astype(float)
 
     g = sns.lmplot(data=plotting, x="date_float", y="messages_per_day",
-                   hue="Message direction", scatter=False, order=5, legend_out=False, aspect=1.7)
+                   hue="Message direction", scatter=False, order=5, legend_out=False, aspect=1.7, palette="Set1")
 
     g.set(xlim=(plotting["date_float"].min(), plotting["date_float"].max()))
 
@@ -188,7 +188,7 @@ def plotActivityOverWeek(data: pd.DataFrame, user: str, save_dir: str = None):
     plotting['weekday'] = plotting['weekday'].astype(cat_type)
 
     g = sns.catplot(x="weekday", y="average_messages_per_day", hue="message_direction", data=plotting,
-                    height=6, kind="bar", palette="muted")
+                    height=6, kind="bar", palette="Set1")
 
     plt.subplots_adjust(top=0.9)
     g.fig.suptitle("Average activity over week")
@@ -225,7 +225,7 @@ def plotActivityOverDay(data: pd.DataFrame, user: str, save_dir: str = None):
     plotting["hour_num"] = plotting["hour"].astype(int)
 
     g = sns.lmplot(data=plotting, x="hour_num", y="avg_messages_per_hour",
-                   hue="message_direction", scatter=False, order=4, legend_out=False, aspect=1.7)
+                   hue="message_direction", scatter=False, order=4, legend_out=False, aspect=1.7, palette="Set1")
 
     g.axes[0, 0].xaxis.set_major_locator(
         MultipleLocator(2))
@@ -352,3 +352,54 @@ def plotMessageLengthDistributionPerChat(data: pd.DataFrame, user: str, chats: i
         assertDir(save_dir)
         fullPath = os.path.join(save_dir, plotName+".png")
         g.savefig(fullPath)
+
+
+def plotAverageMessageLength(data: pd.DataFrame, user: str, chats: int = 20, messagesTreshold: float = 0.1, save_dir: str = None):
+    plotName = "average-message-length-in-significant-chats"
+
+    noGroup = data[data["chat_with"] != "GROUP"]
+    noGroup = noGroup[noGroup["type"] == "Generic"]
+    allNames = noGroup["chat_with"].value_counts()
+
+    namesNum = (int(len(allNames)*messagesTreshold)
+                ) if (int(len(allNames)*messagesTreshold)) > chats else chats
+
+    possibleNames = allNames.index[:namesNum]
+
+    prep = noGroup[noGroup["chat_with"].isin(possibleNames)]
+    prep = prep.dropna(subset=["content"])
+    prep["message_length"] = prep["content"].apply(countWords)
+    prep = prep[prep["message_length"] > 0]
+    prep["message_direction"] = prep["sender_name"].apply(
+        lambda x: "Sent" if x == user else "Received")
+
+    names = prep.groupby("chat_with").mean().reset_index()
+
+    names = names.sort_values(["message_length"], ascending=False)
+
+    namesList = list(names["chat_with"])[:chats]
+
+    catNames = pd.api.types.CategoricalDtype(
+        categories=namesList, ordered=True)
+
+    plotting = prep[prep["chat_with"].isin(namesList)]
+
+    plotting["chat_with"] = plotting["chat_with"].astype(catNames)
+
+    kwargs = {"alpha": 0.5}
+
+    plt.figure(figsize=(9, 12))
+    ax = sns.barplot(data=plotting, y="chat_with", hue="message_direction",
+                     x="message_length", orient="h", palette="Set1", dodge=False, errwidth=0, **kwargs)
+    ax.grid(True)
+    ax.set_title("Average message length in significant chats")
+    ax.set_ylabel('Chat')
+    ax.set_xlabel('Average number of words in a message')
+    ax.legend().set_title("Message direction")
+
+    if save_dir == None:
+        plt.show()
+    else:
+        assertDir(save_dir)
+        fullPath = os.path.join(save_dir, plotName+".png")
+        ax.figure.savefig(fullPath, bbox_inches='tight')
