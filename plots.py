@@ -187,8 +187,10 @@ def plotActivityOverWeek(data: pd.DataFrame, user: str, save_dir: str = None):
 
     plotting['weekday'] = plotting['weekday'].astype(cat_type)
 
+    kwargs = {"saturation": 0.5}
+
     g = sns.catplot(x="weekday", y="average_messages_per_day", hue="message_direction", data=plotting,
-                    height=6, kind="bar", palette="Set1")
+                    height=6, kind="bar", palette="Set1", **kwargs)
 
     plt.subplots_adjust(top=0.9)
     g.fig.suptitle("Average activity over week")
@@ -229,7 +231,7 @@ def plotActivityOverDay(data: pd.DataFrame, user: str, save_dir: str = None):
 
     g.axes[0, 0].xaxis.set_major_locator(
         MultipleLocator(2))
-    g.set(xlim=(0, 23))
+    g.set(xlim=(0, 24))
 
     g.ax.legend(loc=2)
 
@@ -287,7 +289,8 @@ def generateKeywordClouds(data: pd.DataFrame, user: str, language: str = "polish
             plt.show()
         else:
             assertDir(save_dir)
-            fullPath = os.path.join(save_dir, plotName+str(idx)+name+".png")
+            fullPath = os.path.join(
+                save_dir, "-".join([plotName, str(idx), name])+".png")
             plt.savefig(fullPath)
 
 
