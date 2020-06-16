@@ -1,3 +1,5 @@
+from n_gram_extractor import NGramExtractor
+import random
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -20,6 +22,7 @@ PLOTS_DIR = "figures"
 
 # Reading data
 data = pd.read_csv(MESSAGES_FILE)
+
 
 data["date"] = pd.to_datetime(data["timestamp_ms"]*int(
     1e6)).dt.tz_localize('UTC').dt.tz_convert(TIMEZONE).dt.strftime('%Y-%m-%d')
@@ -47,6 +50,4 @@ plots.plotMessageLengthDistributionPerChat(data, user=USER, save_dir=PLOTS_DIR)
 plots.plotAverageMessageLength(
     data, user=USER, chats=20, messagesTreshold=0.1, save_dir=PLOTS_DIR)
 plots.generateKeywordClouds(
-    data, user=USER, language=LANGUAGE, chats=8, save_dir=PLOTS_DIR, background_color="white", lemmatize=False)
-
-# Plot user activity in groups over time
+    data, user=USER, language=LANGUAGE, chats=20, save_dir=PLOTS_DIR, background_color="white")

@@ -12,7 +12,7 @@ from matplotlib.ticker import MultipleLocator
 from datetime import date
 from wordcloud import WordCloud
 
-from textrank import KeywordExtractor
+from n_gram_extractor import NGramExtractor
 
 FONT_PATH = "fonts"
 FONT_NAME = "Righteous-Regular.ttf"
@@ -231,7 +231,7 @@ def plotActivityOverDay(data: pd.DataFrame, user: str, save_dir: str = None):
 
     g.axes[0, 0].xaxis.set_major_locator(
         MultipleLocator(2))
-    g.set(xlim=(0, 24))
+    g.set(xlim=(0, 23))
 
     g.ax.legend(loc=2)
 
@@ -252,14 +252,25 @@ def generateKeywordClouds(data: pd.DataFrame, user: str, language: str = "polish
     plotName = "keywordCloud"
 
     noGroup = data[data["chat_with"] != "GROUP"]
+    noGroup = noGroup[noGroup["type"] == "Generic"]
+    noGroup = noGroup.dropna(subset=["content"])
+
     plotDataSeries = noGroup["chat_with"].value_counts()[:chats]
     names = [name[0] for name in plotDataSeries.items()]
 
-    extractor = KeywordExtractor(
-        language=language, verbose=False, lemmatize=lemmatize)
+    corpus = []
+
+    for name in noGroup["chat_with"].unique():
+        oneChat = noGroup[noGroup["chat_with"] == name]
+        chatString = ". ".join(oneChat["content"].astype(str).values)
+
+        corpus.append(chatString)
+
+    extractor = NGramExtractor(
+        language=language, IDFCorpus=corpus, max_n=len(keyword_numbers))
 
     for idx, name in enumerate(names):
-        oneChat = data[data["chat_with"] == name]
+        oneChat = noGroup[noGroup["chat_with"] == name]
         chatString = ". ".join(oneChat["content"].astype(str).values)
         if(background_color == "black"):
             fig = plt.figure()
@@ -272,7 +283,6 @@ def generateKeywordClouds(data: pd.DataFrame, user: str, language: str = "polish
                 chatString, keywords_number=number, n_gram=n_gram, window_size=4)
 
             for word, value in newKeywords:
-                # n_gram/len(keyword_numbers)
                 keywordFreq[word.capitalize()] = 100*value
 
         fontPath = os.path.abspath(os.path.join(FONT_PATH, FONT_NAME))

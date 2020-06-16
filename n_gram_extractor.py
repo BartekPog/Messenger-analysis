@@ -7,10 +7,7 @@ from corpy.udpipe import Model
 from scipy.sparse import csr_matrix
 
 
-DEFAULT_MODELS_FOLDER = "language_models"
 DEFAULT_STOPWORDS_FOLDER = "stopwords"
-
-POSSIBLE_KEYWORD_POS = ["NOUN", "PROPN"]  # "PROPN"
 
 
 def getStopwords(language: str, stopwords_dir: str = DEFAULT_STOPWORDS_FOLDER) -> list:
@@ -23,55 +20,49 @@ def getStopwords(language: str, stopwords_dir: str = DEFAULT_STOPWORDS_FOLDER) -
     return []
 
 
-def getUdpipeModelNames(dirname: str = DEFAULT_MODELS_FOLDER) -> list:
-    modelNames = []
-    pattern = r"[a-zA-Z]+"
-
-    for root, _, files in os.walk(dirname):
-        for file in files:
-            if (file.endswith(".udpipe")):
-                filePath = os.path.join(root, file)
-                languageName = re.findall(pattern, file)[0]
-                modelNames.append((languageName, filePath))
-
-    return modelNames
-
-
-def getModel(language: str = "english", models_dir: str = DEFAULT_MODELS_FOLDER):
-    models = dict(getUdpipeModelNames(models_dir))
-
-    if language not in models.keys():
-        print("ERR: Language '{}' is not available. \n\nCurrently language packs installed locally are: ".format(language))
-        for lang in models.keys():
-            print(" - ", lang)
-
-        print("\nIf your language is not listed here consider downloading language package from official UDpipe repository. Then just put the file in '{}' folder.".format(DEFAULT_MODELS_FOLDER))
-        return None
-
-    return Model(models[language])
-
-
-class KeywordExtractor():
-    """Extract keywords from text"""
-
-    def __init__(self, language: str, lemmatize: bool = False, verbose: bool = True, stopwords_dir: str = DEFAULT_STOPWORDS_FOLDER, models_dir: str = DEFAULT_MODELS_FOLDER, pos: list = POSSIBLE_KEYWORD_POS, following_character_limit: int = 2):
+class NGramExtractor():
+    def __init__(self, language: str, IDFCorpus: list = None, max_n: int = 4, stopwords_dir: str = DEFAULT_STOPWORDS_FOLDER, following_character_limit: int = 2):
         self.d = 0.85  # damping coefficient, usually is .85
-        self.min_diff = 1e-5  # convergence threshold
-        self.steps = 300  # iteration steps
-        self.node_weight = None  # save keywords and its weight
+        self.steps = 400  # iteration steps
+        self.batchTokens = 1400  # tokens in one extraction batch
+        self.max_n = max_n  # max n_gram
         self.language = language
         self.stopwords = getStopwords(
             language=language, stopwords_dir=stopwords_dir)
-        if(lemmatize):
-            self.lemmaModel = getModel(
-                language=language, models_dir=models_dir)
-        else:
-            self.lemmaModel = None
-        self.partsOfSpeech = pos
-        self.verbose = verbose
-        self.lemmatize = lemmatize
+
         self.followingCharacterLimit = following_character_limit
-        self.batchTokens = 1400
+        self.node_weight = None
+        self.idfCorpus = None
+        if(IDFCorpus != None):
+            self.initIDFCorpus(IDFCorpus)
+
+    def initIDFCorpus(self, corpus: list):
+        idfs = list()
+
+        for n_gram in range(1, self.max_n + 1):
+            nGramOccurences = dict()
+
+            for doc in corpus:
+                sentences = self.get_sentence_tokens(text=doc, n_gram=n_gram)
+                tokensInDoc = set()
+
+                for sentence in sentences:
+                    for token in sentence:
+                        tokensInDoc.add(token)
+
+                for token in tokensInDoc:
+                    if token in nGramOccurences.keys():
+                        nGramOccurences[token] = nGramOccurences[token] + 1
+                    else:
+                        nGramOccurences[token] = 1
+
+            numberOfDocs = len(corpus)
+
+            nGramIDF = {k: np.log(numberOfDocs/float(v))
+                        for k, v in nGramOccurences.items()}
+            idfs.append(nGramIDF)
+        # print(idfs)
+        self.idfCorpus = idfs
 
     def clean_text(self, text: str):
         noLinks = " ".join([word.lower() for word in text.split()
@@ -100,43 +91,24 @@ class KeywordExtractor():
     def get_n_grams(self, sentence: list, grams: int):
         tokens = []
         for i in range(len(sentence)-grams):
-            token = " ".join(sentence[i:i+grams])
+            tokenSequence = sentence[i:i+grams]
+            if (tokenSequence[0] in self.stopwords or tokenSequence[-1] in self.stopwords):
+                continue
+
+            token = " ".join(tokenSequence)
             tokens.append(token)
         return tokens
 
     def get_sentence_tokens(self, text: str, n_gram: int):
         cleanText = self.clean_text(text)
 
-        if self.lemmatize:
-            modelSentences = list(self.lemmaModel.process(cleanText))
+        processedSentences = []
+        for sentence in cleanText.split('.'):
+            words = [word for word in sentence.split(
+            ) if word.isalpha()]
 
-            processedSentences = []
-
-            for sentence in modelSentences:
-                sentenceTokens = []
-                for word in sentence.words:
-                    if not isinstance(word.lemma, str):
-                        continue
-                    if word.form in self.stopwords or word.lemma in self.stopwords:
-                        continue
-                    if word.upostag not in self.partsOfSpeech:
-                        continue
-                    if (len(word.lemma) < 3):
-                        continue
-
-                    sentenceTokens.append(word.lemma.lower())
-
-                tokens = self.get_n_grams(sentenceTokens, n_gram)
-                processedSentences.append(tokens)
-
-        else:
-            processedSentences = []
-            for sentence in cleanText.split('.'):
-                words = [word for word in sentence.split(
-                ) if word not in self.stopwords and len(word) > 2 and word.isalpha()]
-
-                tokens = self.get_n_grams(words, n_gram)
-                processedSentences.append(tokens)
+            tokens = self.get_n_grams(words, n_gram)
+            processedSentences.append(tokens)
 
         return processedSentences
 
@@ -145,7 +117,6 @@ class KeywordExtractor():
         chunk = []
         tokenCount = 0
         for sentence in sentences:
-            # print(sentence)
             if len(sentence) + tokenCount < self.batchTokens:
                 chunk.append(sentence)
                 tokenCount = tokenCount + len(sentence)
@@ -189,28 +160,29 @@ class KeywordExtractor():
             g[j][i] = g[j][i] + 1
             g[i][j] = g[i][j] + 1
 
-        # print("Normalizing")
         g_sparse = csr_matrix(g)
 
         norm = np.sum(g, axis=0)
         norm[norm == 0] = 1
 
-        # print("Dividing")
         g_sp_norm = g_sparse._divide(norm)
 
         return csr_matrix(g_sp_norm)
 
-    def get_keywords_with_values(self, node_weights, number=10):
+    def get_keywords_with_values(self, node_weights, part=0.7):
         node_weight = OrderedDict(
             sorted(node_weights.items(), key=lambda t: t[1], reverse=True))
         keywords = []
+
+        number = len(node_weight.items())*part
+
         for i, (key, value) in enumerate(node_weight.items()):
             keywords.append((key, value))
             if i > number:
                 break
         return keywords
 
-    def get_keywords_for_chunk(self, sentences, window_size=2, keywords_number: int = 10):
+    def get_keywords_for_chunk(self, sentences, window_size=2):
         # Build vocabulary
         vocab = self.get_vocab(sentences)
 
@@ -218,16 +190,12 @@ class KeywordExtractor():
         token_pairs = self.get_token_pairs(window_size, sentences)
 
         # Get normalized matrix
-
         g = self.get_matrix(vocab, token_pairs)
 
         # Initionlization for weight(pagerank value)
         pr = np.array([1] * len(vocab))
 
         # Iteration
-        if self.verbose:
-            print("Iterating")
-
         for _ in range(self.steps):
             pr = (1-self.d) + self.d * g.dot(pr)
 
@@ -236,7 +204,7 @@ class KeywordExtractor():
         for word, index in vocab.items():
             node_weight[word] = pr[index]
 
-        keywords = self.get_keywords_with_values(node_weight, keywords_number)
+        keywords = self.get_keywords_with_values(node_weight, part=0.7)
         return keywords
 
     def analyze(self, text,
@@ -244,20 +212,15 @@ class KeywordExtractor():
         """Main function to analyze text"""
 
         # Parse text
-        if self.verbose:
-            print("Transforming text")
-
         allSentences = self.get_sentence_tokens(text, n_gram)
 
         chunks = self.chunkize(allSentences)
 
         keywordValue = dict()
 
-        for i, chunk in enumerate(chunks):
-            if(self.verbose):
-                print("Handling chunk: {} of {}".format(i+1, len(chunks)))
+        for chunk in chunks:
             chunkKeywords = self.get_keywords_for_chunk(
-                chunk, window_size, keywords_number*2)
+                chunk, window_size)
 
             for kwd in chunkKeywords:
                 if kwd[0] in keywordValue.keys():
@@ -265,8 +228,14 @@ class KeywordExtractor():
                 else:
                     keywordValue[kwd[0]] = kwd[1]
 
-        keywordsList = sorted(keywordValue.items(),
+        if self.idfCorpus != None:
+            finalKwdValue = {
+                k: v*self.idfCorpus[n_gram-1][k] for k, v in keywordValue.items()}
+
+        else:
+            finalKwdValue = keywordValue
+
+        keywordsList = sorted(finalKwdValue.items(),
                               key=lambda item: item[1], reverse=True)
-        # keywordsSorted = [key for key, value in keywordsList]
 
         return keywordsList[:keywords_number]

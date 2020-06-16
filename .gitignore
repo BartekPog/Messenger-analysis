@@ -3,4 +3,5 @@ __pycache__/
 .env/
 inbox/
 figures/
+deprecated/
 all_messages.csv
