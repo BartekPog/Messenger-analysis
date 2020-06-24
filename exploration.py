@@ -15,10 +15,13 @@ import plots
 
 TIMEZONE = "Europe/Warsaw"
 USER = "Bartek Pogod"
+# USER = "Sara Zug"
+
 LANGUAGE = "polish"
 
 MESSAGES_FILE = "all_messages.csv"
 PLOTS_DIR = "figures"
+WORDCLOUDS_SUBDIR = "wordclouds"
 
 # Reading data
 data = pd.read_csv(MESSAGES_FILE)
@@ -50,4 +53,4 @@ plots.plotMessageLengthDistributionPerChat(data, user=USER, save_dir=PLOTS_DIR)
 plots.plotAverageMessageLength(
     data, user=USER, chats=20, messagesTreshold=0.1, save_dir=PLOTS_DIR)
 plots.generateKeywordClouds(
-    data, user=USER, language=LANGUAGE, chats=20, save_dir=PLOTS_DIR, background_color="white")
+    data, user=USER, language=LANGUAGE, chats=5, save_dir=PLOTS_DIR, background_color="white")

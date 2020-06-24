@@ -248,7 +248,7 @@ def plotActivityOverDay(data: pd.DataFrame, user: str, save_dir: str = None):
         g.savefig(fullPath)
 
 
-def generateKeywordClouds(data: pd.DataFrame, user: str, language: str = "polish", chats: int = 6, keyword_numbers=(20, 17, 6, 3), save_dir: str = None, background_color: str = "white", lemmatize: bool = False):
+def generateKeywordClouds(data: pd.DataFrame, user: str, language: str = "polish", chats: int = 6, keyword_numbers=(20, 17, 6, 3), save_dir: str = None, clouds_subdir: str = None, background_color: str = "white", lemmatize: bool = False):
     plotName = "keywordCloud"
 
     noGroup = data[data["chat_with"] != "GROUP"]
@@ -299,8 +299,15 @@ def generateKeywordClouds(data: pd.DataFrame, user: str, language: str = "polish
             plt.show()
         else:
             assertDir(save_dir)
+
+            if clouds_subdir == None:
+                fullDir = save_dir
+            else:
+                fullDir = os.path.join(save_dir, clouds_subdir)
+                assertDir(fullDir)
+
             fullPath = os.path.join(
-                save_dir, "-".join([plotName, str(idx), name])+".png")
+                fullDir, "-".join([plotName, str(idx), name])+".png")
             plt.savefig(fullPath)
 
 
