@@ -1,4 +1,3 @@
-from n_gram_extractor import NGramExtractor
 import random
 import pandas as pd
 import numpy as np
@@ -12,6 +11,7 @@ from matplotlib.ticker import MultipleLocator
 from datetime import date
 
 import plots
+from n_gram_extractor import NGramExtractor
 
 TIMEZONE = "Europe/Warsaw"
 USER = "Bartek Pogod"
@@ -53,4 +53,4 @@ plots.plotMessageLengthDistributionPerChat(data, user=USER, save_dir=PLOTS_DIR)
 plots.plotAverageMessageLength(
     data, user=USER, chats=20, messagesTreshold=0.1, save_dir=PLOTS_DIR)
 plots.generateKeywordClouds(
-    data, user=USER, language=LANGUAGE, chats=5, save_dir=PLOTS_DIR, background_color="white")
+    data, user=USER, language=LANGUAGE, chats=5, save_dir=PLOTS_DIR, clouds_subdir=WORDCLOUDS_SUBDIR, background_color="white")
