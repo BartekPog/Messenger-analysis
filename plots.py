@@ -50,12 +50,13 @@ def plotMessagesInChats(data: pd.DataFrame, chats: int, user: str, save_dir: str
         ax.figure.savefig(fullPath, bbox_inches='tight')
 
 
-def plotActivityOverTime(data: pd.DataFrame, user: str, save_dir: str = None):
+def plotActivityOverTime(data: pd.DataFrame, user: str, save_dir: str = None, order: int = 5):
     plotName = "activity-over-time"
 
     noGroup = data[data["chat_with"] != "GROUP"]
 
-    noGroup["sent_by_user"] = noGroup["sender_name"] == user
+    noGroup["sent_by_user"] = noGroup["sender_name"].apply(
+        lambda x: True if x == user else False)
 
     byDates = noGroup.groupby(["date", "sent_by_user"], as_index=True).agg([
         'count'])
@@ -71,19 +72,17 @@ def plotActivityOverTime(data: pd.DataFrame, user: str, save_dir: str = None):
     plotting["date_float"] = plotting["date"].values.astype(float)
 
     g = sns.lmplot(data=plotting, x="date_float", y="messages_per_day",
-                   hue="Message direction", scatter=False, order=5, legend_out=False, aspect=1.7, palette="Set1")
+                   hue="Message direction", scatter=False, order=order, legend_out=False, aspect=1.7, palette="Set1")
 
     g.set(xlim=(plotting["date_float"].min(), plotting["date_float"].max()))
+    g.set(ylim=(0, None))
 
     plt.subplots_adjust(top=0.9)
     g.fig.suptitle("Average messages number over time")
-    g.axes[0, 0].yaxis.set_major_locator(MultipleLocator(10))
 
-    avgNanoSecondsInMonth = 2628288*int(1e9)
-    numberOfMonths = 2
+    g.axes[0, 0].yaxis.set_major_locator(plt.MaxNLocator(10))
+    g.axes[0, 0].xaxis.set_major_locator(plt.MaxNLocator(10))
 
-    g.axes[0, 0].xaxis.set_major_locator(
-        MultipleLocator(avgNanoSecondsInMonth*numberOfMonths))
     g.axes[0, 0].set_xlabel('Time')
     g.axes[0, 0].set_ylabel('Messages per day')
 
@@ -136,14 +135,11 @@ def plotActivityForMostFrequentNonGroupChats(data: pd.DataFrame, chats: int, ord
 
     plt.subplots_adjust(top=0.9)
     g.fig.suptitle("Average messages number in most frequent chats")
-    g.axes[0, 0].yaxis.set_major_locator(MultipleLocator(20))
-    g.axes[0, 0].yaxis.set_minor_locator(MultipleLocator(10))
 
-    avgSecondsInMonth = 2628288*int(1e9)
-    numberOfMonths = 2
+    g.axes[0, 0].yaxis.set_major_locator(plt.MaxNLocator(10))
+    g.axes[0, 0].yaxis.set_minor_locator(plt.MaxNLocator(20))
+    g.axes[0, 0].xaxis.set_major_locator(plt.MaxNLocator(10))
 
-    g.axes[0, 0].xaxis.set_major_locator(
-        MultipleLocator(avgSecondsInMonth*numberOfMonths))
     g.axes[0, 0].set_xlabel('Time')
     g.axes[0, 0].set_ylabel('Messages per day')
     g._legend.set_title("Chat")
@@ -232,6 +228,7 @@ def plotActivityOverDay(data: pd.DataFrame, user: str, save_dir: str = None):
     g.axes[0, 0].xaxis.set_major_locator(
         MultipleLocator(2))
     g.set(xlim=(0, 23))
+    g.set(ylim=(0, None))
 
     g.ax.legend(loc=2)
 

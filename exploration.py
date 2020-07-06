@@ -14,8 +14,8 @@ import plots
 from n_gram_extractor import NGramExtractor
 
 TIMEZONE = "Europe/Warsaw"
-USER = "Bartek Pogod"
-# USER = "Sara Zug"
+# USER = "Bartek Pogod"
+USER = "Sara Zug"
 
 LANGUAGE = "polish"
 
@@ -44,7 +44,7 @@ data["minute"] = pd.to_datetime(data["timestamp_ms"]*int(
 
 
 plots.plotMessagesInChats(data, chats=15, user=USER, save_dir=PLOTS_DIR)
-plots.plotActivityOverTime(data, user=USER, save_dir=PLOTS_DIR)
+plots.plotActivityOverTime(data, user=USER, save_dir=PLOTS_DIR, order=6)
 plots.plotActivityForMostFrequentNonGroupChats(
     data, chats=4, order=3, save_dir=PLOTS_DIR)
 plots.plotActivityOverWeek(data, user=USER, save_dir=PLOTS_DIR)
