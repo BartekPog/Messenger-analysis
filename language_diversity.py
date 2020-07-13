@@ -1,49 +1,83 @@
 import spacy
+from spacy.lang.xx import MultiLanguage
 import numpy as np
-# from spacy.parts_of_speech import PROPN
+import pandas as pd
+import math
 
 LANGUAGE = "polish"
 
-text = "Pan Tadeusz jest najsłynniejszym dziełem Adama Mickiewicza. To spisana trzynastozgłoskowcem, zawarta w dwunastu księgach opowieść o szlachcie polskiej początku XIX wieku"
-text2 = "amerykańskie przedsiębiorstwo przemysłu kosmicznego, założone w roku 2002 przez Elona Muska. Jego 21 celem jest budowa silników rakietowych i rakiet nośnych oraz statków kosmicznych, w tym także załogowych. Kluczem do osiągnięcia sukcesu ma być znaczne zmniejszenie kosztów wynoszenia ładunku na orbitę. Przede wszystkim, SpaceX projektuje i buduje serię rakiet orbitalnych Falcon i statków kosmicznych Dragon."
-
-language = LANGUAGE
-
-langDict = {
+LANGUAGE_MODELS = {
     "polish": "pl_core_news_md",
     "english": "en_core_web_sm"
 }
 
-print("importing")
-nlp = spacy.load(langDict[language], disable=["parser"])
-print("The rest")
 
-doc = nlp(text2)
-print("Noun phrases:", [chunk.text for chunk in doc.noun_chunks])
-print("Verbs:", [token.lemma_ for token in doc if token.pos_ == "VERB"])
+def getModel(language: str, language_models: dict = LANGUAGE_MODELS) -> spacy.lang:
 
-for token in doc:
-    print(token, token.pos_, token.tag_,
-          token.dep_, token.shape_, token.is_stop)
+    if language not in language_models.keys():
+        print("language not supported. Running on MultiLanguage.")
+        return MultiLanguage()
+
+    return spacy.load(language_models[language], disable=["parser"])
 
 
-def removeEntities(doc: spacy.tokens.Doc) -> spacy.tokens.Doc:
+def removeEntities(doc: spacy.tokens.Doc) -> list:
     entityRanges = np.concatenate(
         [np.arange(e.start, e.end) for e in doc.ents])
 
     return [token for token in doc if token.i not in entityRanges]
 
 
-def removePunctuation(doc: spacy.tokens.Doc) -> spacy.tokens.Doc:
+def removePunctuation(doc: list) -> list:
     return [token for token in doc if token.pos_ != "PUNCT"]
 
 
-def removeNumbers(doc: spacy.tokens.Doc) -> spacy.tokens.Doc:
+def removeNumbers(doc: list) -> list:
     return [token for token in doc if token.pos_ != "NUM"]
 
 
-for entity in doc.ents:
-    print(entity.text, entity.label_, entity.start, entity.end)
+def calculateDiversity(doc: spacy.tokens.Doc, batch_size: int = 2000) -> float:
+    noEnts = removeEntities(doc)
+    noPunct = removePunctuation(noEnts)
+    noNum = removeNumbers(noPunct)
+    prep = np.array(noNum)
+
+    if batch_size > len(prep):
+        return None
+
+    excess = len(prep) % batch_size
+
+    if(excess == 0):
+        batches = np.reshape(prep, (-1, batch_size))
+    else:
+        batches = np.reshape(prep[:-excess], (-1, batch_size))
+
+    lemmaNumbers = list()
+    for batch in batches:
+        lemmas = set()
+        for token in batch:
+            lemmas.add(token.lemma_)
+        lemmaNumbers.append(len(lemmas))
+
+    return sum(lemmaNumbers)/len(lemmaNumbers)/batch_size
 
 
-# TODO REMEMBER ABOUT BATCHES
+def getChatStrings(df: pd.DataFrame, chat: str, avg_batch_chars: int = 70000) -> dict:
+    prep = df.dropna(subset=["content"])
+    oneChat = prep[prep["chat_with"] == chat]
+
+    chatStrings = dict()
+    for direction in ["Sent", "Received"]:
+        directedChat = oneChat[oneChat["message_direction"] == direction]
+        messages = np.array(directedChat["content"].astype(str).values)
+
+        totalLen = sum([len(message) for message in messages])
+        batchNum = math.ceil(totalLen/avg_batch_chars)
+
+        batches = np.array_split(messages, batchNum)
+
+        batchStrings = [". ".join(batchMessages) for batchMessages in batches]
+
+        chatStrings[direction] = batchStrings
+
+    return chatStrings

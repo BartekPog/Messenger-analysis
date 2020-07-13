@@ -5,6 +5,7 @@ import seaborn as sns
 import statsmodels
 import datetime
 import re
+import time
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
@@ -14,8 +15,8 @@ import plots
 from n_gram_extractor import NGramExtractor
 
 TIMEZONE = "Europe/Warsaw"
-# USER = "Bartek Pogod"
-USER = "Sara Zug"
+USER = "Bartek Pogod"
+# USER = "Sara Zug"
 
 LANGUAGE = "polish"
 
@@ -24,6 +25,8 @@ PLOTS_DIR = "figures"
 WORDCLOUDS_SUBDIR = "wordclouds"
 
 # Reading data
+startTime = time.time()
+
 data = pd.read_csv(MESSAGES_FILE)
 
 
@@ -51,6 +54,13 @@ plots.plotActivityOverWeek(data, user=USER, save_dir=PLOTS_DIR)
 plots.plotActivityOverDay(data, user=USER, save_dir=PLOTS_DIR)
 plots.plotMessageLengthDistributionPerChat(data, user=USER, save_dir=PLOTS_DIR)
 plots.plotAverageMessageLength(
-    data, user=USER, chats=20, messagesTreshold=0.1, save_dir=PLOTS_DIR)
+    data, user=USER, chats=20, messages_treshold=0.1, save_dir=PLOTS_DIR)
 plots.generateKeywordClouds(
     data, user=USER, language=LANGUAGE, chats=5, save_dir=PLOTS_DIR, clouds_subdir=WORDCLOUDS_SUBDIR, background_color="white")
+plots.plotLanguageDiversityRank(
+    data, user=USER, language=LANGUAGE, save_dir=PLOTS_DIR, batch_size=500)
+
+endTime = time.time()
+hours, rem = divmod(endTime-startTime, 3600)
+minutes, seconds = divmod(rem, 60)
+print("{:0>2}:{:0>2}:{:05.2f}".format(int(hours), int(minutes), seconds))

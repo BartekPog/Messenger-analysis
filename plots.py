@@ -6,6 +6,7 @@ import os
 import random
 import re
 import numpy as np
+import math
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
@@ -13,6 +14,9 @@ from datetime import date
 from wordcloud import WordCloud
 
 from n_gram_extractor import NGramExtractor
+
+from language_diversity import getChatStrings
+import language_diversity
 
 FONT_PATH = "fonts"
 FONT_NAME = "Righteous-Regular.ttf"
@@ -371,15 +375,15 @@ def plotMessageLengthDistributionPerChat(data: pd.DataFrame, user: str, chats: i
         g.savefig(fullPath)
 
 
-def plotAverageMessageLength(data: pd.DataFrame, user: str, chats: int = 20, messagesTreshold: float = 0.1, save_dir: str = None):
+def plotAverageMessageLength(data: pd.DataFrame, user: str, chats: int = 20, messages_treshold: float = 0.1, save_dir: str = None):
     plotName = "average-message-length-in-significant-chats"
 
     noGroup = data[data["chat_with"] != "GROUP"]
     noGroup = noGroup[noGroup["type"] == "Generic"]
     allNames = noGroup["chat_with"].value_counts()
 
-    namesNum = (int(len(allNames)*messagesTreshold)
-                ) if (int(len(allNames)*messagesTreshold)) > chats else chats
+    namesNum = (int(len(allNames)*messages_treshold)
+                ) if (int(len(allNames)*messages_treshold)) > chats else chats
 
     possibleNames = allNames.index[:namesNum]
 
@@ -412,6 +416,81 @@ def plotAverageMessageLength(data: pd.DataFrame, user: str, chats: int = 20, mes
     ax.set_title("Average message length in significant chats")
     ax.set_ylabel('Chat')
     ax.set_xlabel('Average number of words in a message')
+    ax.legend().set_title("Message direction")
+
+    if save_dir == None:
+        plt.show()
+    else:
+        assertDir(save_dir)
+        fullPath = os.path.join(save_dir, plotName+".png")
+        ax.figure.savefig(fullPath, bbox_inches='tight')
+
+
+def plotLanguageDiversityRank(data: pd.DataFrame, user: str, language: str, chats: int = 20, batch_size: int = 500, messages_treshold: int = 0.05, save_dir: str = None):
+    plotName = "Language diversity rank"
+
+    noGroup = data[data["chat_with"] != "GROUP"]
+    prep = noGroup[noGroup["type"] == "Generic"]
+
+    prep["message_direction"] = prep["sender_name"].apply(
+        lambda x: "Sent" if x == user else "Received")
+
+    allNames = prep["chat_with"].value_counts()
+
+    namesNum = (int(len(allNames)*messages_treshold)
+                ) if (int(len(allNames)*messages_treshold)) > chats else chats
+
+    possibleNames = allNames.index[:namesNum]
+
+    model = language_diversity.getModel(language=language)
+
+    ranks = list()
+    for name in possibleNames:
+        chatStrings = getChatStrings(prep, chat=name)
+        rankRow = [name]
+
+        for direction in ["Sent", "Received"]:
+            scores = list()
+            for batch in chatStrings[direction]:
+                doc = model(batch)
+                score = language_diversity.calculateDiversity(
+                    doc, batch_size=batch_size)
+
+                if(score != None):
+                    scores.append(score)
+
+            if(len(scores) > 0):
+                meanDirectionalScore = sum(scores)/len(scores)
+                rankRow.append(meanDirectionalScore)
+            else:
+                rankRow.append(0)
+        ranks.append(rankRow)
+
+    dataDf = pd.DataFrame(ranks, columns=["Chat", "Sent", "Received"])
+
+    dataDf["diversity_sum"] = dataDf["Sent"] + dataDf["Received"]
+
+    sortedNames = dataDf.sort_values(["diversity_sum"], ascending=False)[
+        "Chat"].values[:chats]
+
+    catNames = pd.api.types.CategoricalDtype(
+        categories=sortedNames, ordered=True)
+
+    dataDfPrep = dataDf[dataDf["Chat"].isin(sortedNames)]
+
+    dataDfPrep["Chat"] = dataDfPrep["Chat"].astype(catNames)
+
+    plotting = pd.melt(dataDfPrep, id_vars=["Chat", "diversity_sum"], value_vars=[
+        "Sent", "Received"], value_name="Score", var_name="message_direction")
+
+    kwargs = {"alpha": 0.5}
+    plt.figure(figsize=(9, 12))
+    ax = sns.barplot(data=plotting, y="Chat", hue="message_direction",
+                     x="Score", orient="h", palette="Set1", dodge=False, errwidth=0, **kwargs)
+    ax.grid(True)
+    ax.set_title("Language diversity rank")
+    ax.set_ylabel('Chat')
+    ax.set_xlabel('Diversity score')
     ax.legend().set_title("Message direction")
 
     if save_dir == None:
