@@ -4,12 +4,10 @@ import numpy as np
 import pandas as pd
 import math
 
-LANGUAGE = "polish"
+from parameters import getParam
 
-LANGUAGE_MODELS = {
-    "polish": "pl_core_news_md",
-    "english": "en_core_web_sm"
-}
+LANGUAGE = getParam('language')
+LANGUAGE_MODELS = getParam('languageModels')
 
 
 def getModel(language: str, language_models: dict = LANGUAGE_MODELS) -> spacy.lang:

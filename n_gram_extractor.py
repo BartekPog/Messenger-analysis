@@ -6,8 +6,9 @@ import pandas as pd
 from corpy.udpipe import Model
 from scipy.sparse import csr_matrix
 
+from parameters import getParam
 
-DEFAULT_STOPWORDS_FOLDER = "stopwords"
+DEFAULT_STOPWORDS_FOLDER = getParam('stopwordsDirectory')
 
 
 def getStopwords(language: str, stopwords_dir: str = DEFAULT_STOPWORDS_FOLDER) -> list:

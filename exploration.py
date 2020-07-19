@@ -1,51 +1,26 @@
-import random
-import pandas as pd
-import numpy as np
-import seaborn as sns
-import statsmodels
-import datetime
-import re
 import time
 
-import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator
-from datetime import date
-
+from parameters import getParam
+from utils import printExecutionTime
+from zip_extraction import getMessages
 import plots
-from n_gram_extractor import NGramExtractor
 
-TIMEZONE = "Europe/Warsaw"
-USER = "Bartek Pogod"
-# USER = "Sara Zug"
 
-LANGUAGE = "polish"
+TIMEZONE = getParam('timezone')
+USER = getParam('user')
+LANGUAGE = getParam('language')
+ZIP_DIR = getParam('dataZipDirectory')
+MESSAGES_FILE = getParam('allMessagesFile')
+PLOTS_DIR = getParam('plotsDirectory')
+WORDCLOUDS_SUBDIR = getParam('wordClouds')['subDirectory']
 
-MESSAGES_FILE = "all_messages.csv"
-PLOTS_DIR = "figures"
-WORDCLOUDS_SUBDIR = "wordclouds"
-
-# Reading data
 startTime = time.time()
 
-data = pd.read_csv(MESSAGES_FILE)
+# Read data
+data = getMessages(ZIP_DIR, outputName=MESSAGES_FILE,
+                   user=USER, timezone=TIMEZONE)
 
-
-data["date"] = pd.to_datetime(data["timestamp_ms"]*int(
-    1e6)).dt.tz_localize('UTC').dt.tz_convert(TIMEZONE).dt.strftime('%Y-%m-%d')
-
-data["weekday"] = pd.to_datetime(data["timestamp_ms"]*int(
-    1e6)).dt.tz_localize('UTC').dt.tz_convert(TIMEZONE).dt.strftime('%A')
-
-data["yearday"] = pd.to_datetime(data["timestamp_ms"]*int(
-    1e6)).dt.tz_localize('UTC').dt.tz_convert(TIMEZONE).dt.strftime('%j')
-
-data["hour"] = pd.to_datetime(data["timestamp_ms"]*int(
-    1e6)).dt.tz_localize('UTC').dt.tz_convert(TIMEZONE).dt.strftime('%H')
-
-data["minute"] = pd.to_datetime(data["timestamp_ms"]*int(
-    1e6)).dt.tz_localize('UTC').dt.tz_convert(TIMEZONE).dt.strftime('%M')
-
-
+# Generate plots
 plots.plotMessagesInChats(data, chats=15, user=USER, save_dir=PLOTS_DIR)
 plots.plotActivityOverTime(data, user=USER, save_dir=PLOTS_DIR, order=6)
 plots.plotActivityForMostFrequentNonGroupChats(
@@ -60,7 +35,7 @@ plots.generateKeywordClouds(
 plots.plotLanguageDiversityRank(
     data, user=USER, language=LANGUAGE, save_dir=PLOTS_DIR, batch_size=500)
 
+# Calculate execution time
 endTime = time.time()
-hours, rem = divmod(endTime-startTime, 3600)
-minutes, seconds = divmod(rem, 60)
-print("{:0>2}:{:0>2}:{:05.2f}".format(int(hours), int(minutes), seconds))
+# print("done")
+printExecutionTime(startTime, endTime)

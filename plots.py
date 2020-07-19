@@ -13,21 +13,18 @@ from matplotlib.ticker import MultipleLocator
 from datetime import date
 from wordcloud import WordCloud
 
-from n_gram_extractor import NGramExtractor
+from parameters import getParam
+from utils import assertDir, countWords
 
+from n_gram_extractor import NGramExtractor
 from language_diversity import getChatStrings
 import language_diversity
 
-FONT_PATH = "fonts"
-FONT_NAME = "Righteous-Regular.ttf"
-COLORS = ["twilight", "cividis", "copper", "bone", "magma"]
+FONT_PATH = getParam('wordClouds')['fontsPath']
+FONT_NAME = getParam('wordClouds')['fontFile']
+COLORS = getParam('wordClouds')['colors']
 
 sns.set()
-
-
-def assertDir(directory: str):
-    if not os.path.exists(directory):
-        os.makedirs(directory)
 
 
 def plotMessagesInChats(data: pd.DataFrame, chats: int, user: str, save_dir: str = None):
@@ -310,12 +307,6 @@ def generateKeywordClouds(data: pd.DataFrame, user: str, language: str = "polish
             fullPath = os.path.join(
                 fullDir, "-".join([plotName, str(idx), name])+".png")
             plt.savefig(fullPath)
-
-
-def countWords(text: str) -> int:
-    pattern = r"[^\W|\d]+"
-    words = re.findall(pattern, text)
-    return len(words)
 
 
 def plotMessageLengthDistributionPerChat(data: pd.DataFrame, user: str, chats: int = 6, bins: int = 12, save_dir: str = None):
