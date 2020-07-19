@@ -1,0 +1,24 @@
+{
+  "user": "Bartek Pogod",
+  "language": "polish",
+  "timezone": "Europe/Warsaw",
+
+  "dataZipDirectory": "zips",
+  "plotsDirectory": "figures",
+  "allMessagesFile": "all_messages.csv",
+
+  "stopwordsDirectory": "stopwords",
+  "languageModels": {
+    "polish": "pl_core_news_md",
+    "english": "en_core_web_sm"
+  },
+
+  "wordClouds": {
+    "subDirectory": "wordclouds",
+    "fontsPath": "fonts",
+    "fontFile": "Righteous-Regular.ttf",
+    "colors": ["twilight", "cividis", "copper", "bone", "magma"]
+  },
+
+  "dataDirectory": "inbox"
+}

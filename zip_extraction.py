@@ -5,11 +5,11 @@ import re
 from functools import partial
 import json
 
+from parameters import getParam
 
-DEFAULT_ZIP_FOLDER = "zips"
-DEFAULT_OUTPUT_FILE = "all_messages.csv"
-USER = "Bartek Pogod"
-# USER = "Sara Zug"
+DEFAULT_ZIP_FOLDER = getParam('dataZipDirectory')
+DEFAULT_OUTPUT_FILE = getParam('allMessagesFile')
+USER = getParam('user')
 
 
 def getZipPath(folderName: str = DEFAULT_ZIP_FOLDER, user: str = USER) -> str:
@@ -66,9 +66,31 @@ def getDataFrame(folderName: str = DEFAULT_ZIP_FOLDER, user: str = USER) -> pd.D
     return pd.concat(dataFrames, ignore_index=True)
 
 
-def getMessagesCsv(folderName: str = DEFAULT_ZIP_FOLDER, outputName: str = DEFAULT_OUTPUT_FILE, user: str = USER):
+def getDates(data: pd.DataFrame, timezone: str) -> pd.DataFrame:
+    data["date"] = pd.to_datetime(data["timestamp_ms"]*int(
+        1e6)).dt.tz_localize('UTC').dt.tz_convert(timezone).dt.strftime('%Y-%m-%d')
+
+    data["weekday"] = pd.to_datetime(data["timestamp_ms"]*int(
+        1e6)).dt.tz_localize('UTC').dt.tz_convert(timezone).dt.strftime('%A')
+
+    data["yearday"] = pd.to_datetime(data["timestamp_ms"]*int(
+        1e6)).dt.tz_localize('UTC').dt.tz_convert(timezone).dt.strftime('%j')
+
+    data["hour"] = pd.to_datetime(data["timestamp_ms"]*int(
+        1e6)).dt.tz_localize('UTC').dt.tz_convert(timezone).dt.strftime('%H')
+
+    data["minute"] = pd.to_datetime(data["timestamp_ms"]*int(
+        1e6)).dt.tz_localize('UTC').dt.tz_convert(timezone).dt.strftime('%M')
+
+    return data
+
+
+def getMessages(folderName: str = DEFAULT_ZIP_FOLDER, outputName: str = DEFAULT_OUTPUT_FILE, user: str = USER, timezone: str = None):
     dataFrame = getDataFrame(folderName=folderName, user=user)
     if isinstance(outputName, str):
         dataFrame.to_csv(outputName, index=False)
 
-    return dataFrame
+    if(timezone != None):
+        return getDates(dataFrame, timezone)
+    else:
+        return dataFrame
