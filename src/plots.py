@@ -13,12 +13,11 @@ from matplotlib.ticker import MultipleLocator
 from datetime import date
 from wordcloud import WordCloud
 
-from parameters import getParam
-from utils import assertDir, countWords
+from .parameters import getParam
+from .utils import assertDir, countWords
 
-from n_gram_extractor import NGramExtractor
-from language_diversity import getChatStrings
-import language_diversity
+from .n_gram_extractor import NGramExtractor
+from .language_diversity import getChatStrings, calculateDiversity, getModel
 
 FONT_PATH = getParam('wordClouds')['fontsPath']
 FONT_NAME = getParam('wordClouds')['fontFile']
@@ -433,7 +432,7 @@ def plotLanguageDiversityRank(data: pd.DataFrame, user: str, language: str, chat
 
     possibleNames = allNames.index[:namesNum]
 
-    model = language_diversity.getModel(language=language)
+    model = getModel(language=language)
 
     ranks = list()
     for name in possibleNames:
@@ -444,7 +443,7 @@ def plotLanguageDiversityRank(data: pd.DataFrame, user: str, language: str, chat
             scores = list()
             for batch in chatStrings[direction]:
                 doc = model(batch)
-                score = language_diversity.calculateDiversity(
+                score = calculateDiversity(
                     doc, batch_size=batch_size)
 
                 if(score != None):

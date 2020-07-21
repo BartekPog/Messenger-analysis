@@ -18,7 +18,5 @@
     "fontsPath": "fonts",
     "fontFile": "Righteous-Regular.ttf",
     "colors": ["twilight", "cividis", "copper", "bone", "magma"]
-  },
-
-  "dataDirectory": "inbox"
+  }
 }

@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import math
 
-from parameters import getParam
+from .parameters import getParam
 
 LANGUAGE = getParam('language')
 LANGUAGE_MODELS = getParam('languageModels')

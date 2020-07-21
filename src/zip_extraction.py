@@ -5,7 +5,7 @@ import re
 from functools import partial
 import json
 
-from parameters import getParam
+from .parameters import getParam
 
 DEFAULT_ZIP_FOLDER = getParam('dataZipDirectory')
 DEFAULT_OUTPUT_FILE = getParam('allMessagesFile')

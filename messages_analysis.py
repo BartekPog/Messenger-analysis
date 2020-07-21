@@ -1,8 +1,8 @@
 import time
 
-from utils import printExecutionTime
-from zip_extraction import getMessages
-from plots_generation import generatePlots
+from src.utils import printExecutionTime
+from src.zip_extraction import getMessages
+from src.plots_generation import generatePlots
 
 
 def runFullAnalysis():
