@@ -10,6 +10,7 @@ from parameters import getParam
 DEFAULT_ZIP_FOLDER = getParam('dataZipDirectory')
 DEFAULT_OUTPUT_FILE = getParam('allMessagesFile')
 USER = getParam('user')
+TIMEZONE = getParam('timezone')
 
 
 def getZipPath(folderName: str = DEFAULT_ZIP_FOLDER, user: str = USER) -> str:
@@ -66,7 +67,7 @@ def getDataFrame(folderName: str = DEFAULT_ZIP_FOLDER, user: str = USER) -> pd.D
     return pd.concat(dataFrames, ignore_index=True)
 
 
-def getDates(data: pd.DataFrame, timezone: str) -> pd.DataFrame:
+def getDates(data: pd.DataFrame, timezone: str = TIMEZONE) -> pd.DataFrame:
     data["date"] = pd.to_datetime(data["timestamp_ms"]*int(
         1e6)).dt.tz_localize('UTC').dt.tz_convert(timezone).dt.strftime('%Y-%m-%d')
 
@@ -85,7 +86,7 @@ def getDates(data: pd.DataFrame, timezone: str) -> pd.DataFrame:
     return data
 
 
-def getMessages(folderName: str = DEFAULT_ZIP_FOLDER, outputName: str = DEFAULT_OUTPUT_FILE, user: str = USER, timezone: str = None):
+def getMessages(folderName: str = DEFAULT_ZIP_FOLDER, outputName: str = DEFAULT_OUTPUT_FILE, user: str = USER, timezone: str = TIMEZONE):
     dataFrame = getDataFrame(folderName=folderName, user=user)
     if isinstance(outputName, str):
         dataFrame.to_csv(outputName, index=False)
