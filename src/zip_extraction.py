@@ -6,11 +6,13 @@ from functools import partial
 import json
 
 from .parameters import getParam
+from .anonymize import changeNames
 
 DEFAULT_ZIP_FOLDER = getParam('dataZipDirectory')
 DEFAULT_OUTPUT_FILE = getParam('allMessagesFile')
 USER = getParam('user')
 TIMEZONE = getParam('timezone')
+ANONYMIZE = getParam('anonymize')
 
 
 def getZipPath(folderName: str = DEFAULT_ZIP_FOLDER, user: str = USER) -> str:
@@ -51,7 +53,7 @@ def extractOne(zipF: zipfile.ZipFile, fileDir: str, user: str = USER) -> pd.Data
     return messages
 
 
-def getDataFrame(folderName: str = DEFAULT_ZIP_FOLDER, user: str = USER) -> pd.DataFrame:
+def getDataFrame(folderName: str = DEFAULT_ZIP_FOLDER, user: str = USER, isAnonymous: bool = ANONYMIZE) -> pd.DataFrame:
     zipPath = getZipPath(folderName=folderName, user=user)
 
     if zipPath == None:
@@ -64,7 +66,12 @@ def getDataFrame(folderName: str = DEFAULT_ZIP_FOLDER, user: str = USER) -> pd.D
             if fileDir.endswith(".json"):
                 dataFrames.append(extractOne(zipF, fileDir, user))
 
-    return pd.concat(dataFrames, ignore_index=True)
+    fullDataFrame = pd.concat(dataFrames, ignore_index=True)
+
+    if isAnonymous:
+        fullDataFrame = changeNames(fullDataFrame)
+
+    return fullDataFrame
 
 
 def getDates(data: pd.DataFrame, timezone: str = TIMEZONE) -> pd.DataFrame:
@@ -86,8 +93,9 @@ def getDates(data: pd.DataFrame, timezone: str = TIMEZONE) -> pd.DataFrame:
     return data
 
 
-def getMessages(folderName: str = DEFAULT_ZIP_FOLDER, outputName: str = DEFAULT_OUTPUT_FILE, user: str = USER, timezone: str = TIMEZONE):
-    dataFrame = getDataFrame(folderName=folderName, user=user)
+def getMessages(folderName: str = DEFAULT_ZIP_FOLDER, outputName: str = DEFAULT_OUTPUT_FILE, user: str = USER, timezone: str = TIMEZONE, isAnonymous: bool = ANONYMIZE):
+    dataFrame = getDataFrame(folderName=folderName,
+                             user=user, isAnonymous=isAnonymous)
     if isinstance(outputName, str):
         dataFrame.to_csv(outputName, index=False)
 

@@ -6,6 +6,7 @@
   "dataZipDirectory": "zips",
   "plotsDirectory": "figures",
   "allMessagesFile": "all_messages.csv",
+  "anonymize": false,
 
   "stopwordsDirectory": "stopwords",
   "languageModels": {
