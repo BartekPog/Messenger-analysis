@@ -417,7 +417,7 @@ def plotAverageMessageLength(data: pd.DataFrame, user: str, chats: int = 20, mes
 
 
 def plotLanguageDiversityRank(data: pd.DataFrame, user: str, language: str, chats: int = 20, batch_size: int = 500, messages_treshold: int = 0.05, save_dir: str = None):
-    plotName = "Language diversity rank"
+    plotName = "language-diversity-rank"
 
     noGroup = data[data["chat_with"] != "GROUP"]
     prep = noGroup[noGroup["type"] == "Generic"]
