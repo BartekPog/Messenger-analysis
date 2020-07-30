@@ -1,4 +1,5 @@
 import time
+import sys
 
 from src.utils import printExecutionTime
 from src.zip_extraction import getMessages
@@ -20,4 +21,8 @@ def runFullAnalysis():
 
 
 if __name__ == "__main__":
+    if not sys.warnoptions:
+        import warnings
+        warnings.simplefilter("ignore")
+
     runFullAnalysis()

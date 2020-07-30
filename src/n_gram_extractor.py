@@ -3,7 +3,6 @@ import numpy as np
 import os
 import re
 import pandas as pd
-from corpy.udpipe import Model
 from scipy.sparse import csr_matrix
 
 from .parameters import getParam

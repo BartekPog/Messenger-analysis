@@ -1,6 +1,6 @@
 # Messenger Report Generator
 
-For many of us, messenger is the main communicator. It contains a lot of information about ourselves and our relationships. This repository contains a script that generates a bunch of charts about **your messages history**.
+For many of us, Messenger is the main communicator. It contains a lot of information about ourselves and our relationships. This repository contains a script that generates a bunch of charts about **your messages history**.
 
 #### Charts this project generates:
 
