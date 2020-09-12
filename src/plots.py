@@ -62,8 +62,6 @@ def plotActivityOverTime(data: pd.DataFrame, user: str, save_dir: str = None, or
     byDates = noGroup.groupby(
         ["date", "sent_by_user"], as_index=True).agg('count')
 
-    dates = pd.date_range(min(data["date"]), max(data["date"]))
-
     plotting = byDates.reset_index()
 
     plotting["messages_per_day"] = plotting["sender_name"]
@@ -119,8 +117,6 @@ def plotActivityForMostFrequentNonGroupChats(data: pd.DataFrame, chats: int, ord
 
     byDates = onlyChosen.groupby(["date", "chat_with"], as_index=True).agg(
         'count')
-
-    dates = pd.date_range(min(data["date"]), max(data["date"]))
 
     plotting = byDates.reset_index()
 
