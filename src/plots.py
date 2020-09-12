@@ -6,6 +6,7 @@ import os
 import random
 import re
 import numpy as np
+import time
 import math
 
 import matplotlib.pyplot as plt
@@ -58,18 +59,20 @@ def plotActivityOverTime(data: pd.DataFrame, user: str, save_dir: str = None, or
     noGroup["sent_by_user"] = noGroup["sender_name"].apply(
         lambda x: True if x == user else False)
 
-    byDates = noGroup.groupby(["date", "sent_by_user"], as_index=True).agg([
-        'count'])
+    byDates = noGroup.groupby(
+        ["date", "sent_by_user"], as_index=True).agg('count')
 
-    dates = pd.date_range(min(data["date"]), max(data["date"]))
+    plotting = byDates.reset_index()
 
-    plotting = byDates.reindex(dates, level=0).reset_index()
+    plotting["messages_per_day"] = plotting["sender_name"]
 
-    plotting["messages_per_day"] = plotting[("sender_name", "count")]
+    plotting["datetime"] = plotting["date"].astype(str).apply(
+        lambda dstr: time.mktime(time.strptime(dstr, r"%Y-%m-%d")))
+
+    plotting["date_float"] = plotting["datetime"].values.astype(float)
+
     plotting["Message direction"] = plotting["sent_by_user"].apply(
         lambda x: "Sent" if x else "Received")
-
-    plotting["date_float"] = plotting["date"].values.astype(float)
 
     g = sns.lmplot(data=plotting, x="date_float", y="messages_per_day",
                    hue="Message direction", scatter=False, order=order, legend_out=False, aspect=1.7, palette="Set1")
@@ -115,13 +118,14 @@ def plotActivityForMostFrequentNonGroupChats(data: pd.DataFrame, chats: int, ord
     byDates = onlyChosen.groupby(["date", "chat_with"], as_index=True).agg(
         'count')
 
-    dates = pd.date_range(min(data["date"]), max(data["date"]))
-
-    plotting = byDates.reindex(dates, level=0).reset_index()
+    plotting = byDates.reset_index()
 
     plotting["messages_per_day"] = plotting["sender_name"]
 
-    plotting["date_float"] = plotting["date"].values.astype(float)
+    plotting["datetime"] = plotting["date"].astype(str).apply(
+        lambda dstr: time.mktime(time.strptime(dstr, "%Y-%m-%d")))
+
+    plotting["date_float"] = plotting["datetime"].values.astype(float)
 
     cat_type = pd.api.types.CategoricalDtype(categories=names, ordered=True)
 

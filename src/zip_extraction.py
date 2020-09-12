@@ -22,6 +22,7 @@ def getZipPath(folderName: str = DEFAULT_ZIP_FOLDER, user: str = USER) -> str:
         if ((fileName.endswith(".zip")) and (str(prepName) in str(fileName))):
             return os.path.join(folderName, fileName)
 
+    print("ERROR: No zip file for user ", USER)
     return None
 
 
@@ -76,7 +77,7 @@ def getDataFrame(folderName: str = DEFAULT_ZIP_FOLDER, user: str = USER, isAnony
 
 def getDates(data: pd.DataFrame, timezone: str = TIMEZONE) -> pd.DataFrame:
     data["date"] = pd.to_datetime(data["timestamp_ms"]*int(
-        1e6)).dt.tz_localize('UTC').dt.tz_convert(timezone).dt.strftime('%Y-%m-%d')
+        1e6), errors="ignore").dt.tz_localize('UTC').dt.tz_convert(timezone).dt.strftime('%Y-%m-%d')
 
     data["weekday"] = pd.to_datetime(data["timestamp_ms"]*int(
         1e6)).dt.tz_localize('UTC').dt.tz_convert(timezone).dt.strftime('%A')
@@ -99,7 +100,8 @@ def getMessages(folderName: str = DEFAULT_ZIP_FOLDER, outputName: str = DEFAULT_
     if isinstance(outputName, str):
         dataFrame.to_csv(outputName, index=False)
 
-    if(timezone != None):
+    if isinstance(timezone, str):
         return getDates(dataFrame, timezone)
     else:
+        print("WARNING: No timezone provided")
         return dataFrame

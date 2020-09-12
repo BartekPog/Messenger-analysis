@@ -47,7 +47,7 @@ Preparing data file shall not take more than 24h. You will be notified when your
 
 #### Setting up the script
 
-After **cloning** this repository place the downloaded zip in `zips` directory and run:
+After **cloning** this repository place the downloaded zip in `zips` subdirectory, [setup the virtual environment](https://uoa-eresearch.github.io/eresearch-cookbook/recipe/2014/11/26/python-virtual-env/) and run:
 
 ```bash
 pip install -r requirements.txt
