@@ -59,15 +59,17 @@ def plotActivityOverTime(data: pd.DataFrame, user: str, save_dir: str = None, or
     noGroup["sent_by_user"] = noGroup["sender_name"].apply(
         lambda x: True if x == user else False)
 
-    byDates = noGroup.groupby(["date", "sent_by_user"], as_index=True).agg('count')
+    byDates = noGroup.groupby(
+        ["date", "sent_by_user"], as_index=True).agg('count')
 
     dates = pd.date_range(min(data["date"]), max(data["date"]))
 
-    plotting = byDates.reindex(dates, level=0).reset_index()
+    plotting = byDates.reset_index()
 
     plotting["messages_per_day"] = plotting["sender_name"]
 
-    plotting["datetime"] = plotting["date"].apply(lambda dstr: time.mktime(time.strptime(dstr, "%Y-%m-%d")))
+    plotting["datetime"] = plotting["date"].astype(str).apply(
+        lambda dstr: time.mktime(time.strptime(dstr, r"%Y-%m-%d")))
 
     plotting["date_float"] = plotting["datetime"].values.astype(float)
 
@@ -120,13 +122,14 @@ def plotActivityForMostFrequentNonGroupChats(data: pd.DataFrame, chats: int, ord
 
     dates = pd.date_range(min(data["date"]), max(data["date"]))
 
-    plotting = byDates.reindex(dates, level=0).reset_index()
+    plotting = byDates.reset_index()
 
     plotting["messages_per_day"] = plotting["sender_name"]
 
-    # plotting["datetime"] = plotting["date"].apply(lambda dstr: time.mktime(time.strptime(dstr, "%Y-%m-%d")))
+    plotting["datetime"] = plotting["date"].astype(str).apply(
+        lambda dstr: time.mktime(time.strptime(dstr, "%Y-%m-%d")))
 
-    plotting["date_float"] = plotting["date"].values.astype(float)
+    plotting["date_float"] = plotting["datetime"].values.astype(float)
 
     cat_type = pd.api.types.CategoricalDtype(categories=names, ordered=True)
 

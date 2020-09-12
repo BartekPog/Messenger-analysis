@@ -12,7 +12,6 @@ def runFullAnalysis():
     print("Parsing data")
     data = getMessages()
 
-
     print("Generating plots")
     generatePlots(data)
 
