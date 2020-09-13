@@ -47,7 +47,16 @@ Preparing data file shall not take more than 24h. You will be notified when your
 
 #### Setting up the script
 
-After **cloning** this repository place the downloaded zip in `zips` subdirectory, [setup the virtual environment](https://uoa-eresearch.github.io/eresearch-cookbook/recipe/2014/11/26/python-virtual-env/) and run:
+After **cloning** this repository place the downloaded zip in `zips` subdirectory and setup the virtual environment for **python 3.8**. 
+
+On Linux you can use [virtualenv](https://uoa-eresearch.github.io/eresearch-cookbook/recipe/2014/11/26/python-virtual-env/).
+
+On Windows you have to use `conda` virtual environment. You can use either 
+ - [Miniconda](https://docs.conda.io/en/latest/miniconda.html) - install and run cmd via `Anaconda Prompt (miniconda3)` and `cd` to the cloned repository directory 
+ - [Anaconda](https://www.anaconda.com/products/individual#windows) - install and run `Anaconda Navigator (anaconda3)`, then go to **Environments**, setup new environment, start it via cmd and `cd` to the repository directory.
+
+ 
+After setting up the environment and opening the repository directory run:
 
 ```bash
 pip install -r requirements.txt
