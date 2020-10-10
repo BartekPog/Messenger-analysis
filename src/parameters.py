@@ -4,7 +4,7 @@ PARAM_FILE = 'params.json'
 
 
 def getParams(paramFile: str = PARAM_FILE) -> dict:
-    with open(paramFile, "r") as file:
+    with open(paramFile, "r", encoding='utf-8') as file:
         params = json.load(file)
 
     return params

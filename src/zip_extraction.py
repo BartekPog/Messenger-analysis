@@ -18,7 +18,7 @@ ANONYMIZE = getParam('anonymize')
 def getZipPath(folderName: str = DEFAULT_ZIP_FOLDER, user: str = USER) -> str:
     prepName = ''.join(user.split()).lower()
 
-    filesNames = os.listdir(folderName)
+    filesNames = [file for file in os.listdir(folderName) if file.endswith(".zip") ]
 
     if (len(filesNames) == 0):
         print("ERROR: put the zip file in ", folderName)
