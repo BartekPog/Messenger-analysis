@@ -74,7 +74,11 @@ def getDataFrame(folderName: str = DEFAULT_ZIP_FOLDER, user: str = USER, isAnony
     with zipfile.ZipFile(zipPath) as zipF:
         for fileDir in zipF.namelist():
             if fileDir.endswith(".json"):
-                dataFrames.append(extractOne(zipF, fileDir, user))
+                try:
+                    newChat = extractOne(zipF, fileDir, user)
+                    dataFrames.append(newChat)
+                except:
+                    print("WARNING: Wrong chat syntax in "+ fileDir)
 
     fullDataFrame = pd.concat(dataFrames, ignore_index=True)
 

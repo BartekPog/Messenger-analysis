@@ -9,3 +9,4 @@ zips/*.zip
 all_messages.csv
 all_messages_temp.csv
 testing.py
+.env
