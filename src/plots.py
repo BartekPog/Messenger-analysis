@@ -91,7 +91,7 @@ def plotActivityOverTime(data: pd.DataFrame, user: str, save_dir: str = None, or
 
     xticks = g.axes[0, 0].get_xticks()
     xticks_dates = [datetime.datetime.fromtimestamp(
-        x/int(1e9)).strftime(' %b %Y') for x in xticks]
+        x).strftime(' %b %Y') for x in xticks]
     g.axes[0, 0].set_xticklabels(
         xticks_dates,  rotation=45, horizontalalignment='right')
 
@@ -150,7 +150,7 @@ def plotActivityForMostFrequentNonGroupChats(data: pd.DataFrame, chats: int, ord
 
     xticks = g.axes[0, 0].get_xticks()
     xticks_dates = [datetime.datetime.fromtimestamp(
-        x/int(1e9)).strftime(' %b %Y') for x in xticks]
+        x).strftime(' %b %Y') for x in xticks]
     g.axes[0, 0].set_xticklabels(
         xticks_dates,  rotation=45, horizontalalignment='right')
 
