@@ -1,5 +1,5 @@
 corpy==0.2.3
-joblib==0.15.1
+joblib==1.2.0
 jupyter==1.0.0
 matplotlib==3.2.1
 numpy==1.18.3
