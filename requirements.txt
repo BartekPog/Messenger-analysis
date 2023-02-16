@@ -2,7 +2,7 @@ corpy==0.2.3
 joblib==1.2.0
 jupyter==1.0.0
 matplotlib==3.2.1
-numpy==1.18.3
+numpy==1.22.0
 packaging==20.3
 pandas==1.0.3
 regex==2019.12.20
